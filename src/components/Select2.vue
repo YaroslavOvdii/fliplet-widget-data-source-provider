@@ -1,9 +1,8 @@
 <template>
   <section>
-    <select name="selectDatasource" ref="selectDatasource" data-label="select" class="hidden-select form-control">
+    <select name="selectDatasource" ref="dataSourceSelect" data-label="select" class="hidden-select form-control">
       <option value="none" disable>-- Select data source</option>
     </select>
-    <div class="dropdown-holder" ref="dropdownHolder"></div>
   </section>
 </template>
 
@@ -66,19 +65,19 @@ export default {
       return null;
     },
     initSelect2: function() {
-      $(this.$refs.selectDatasource).select2({
+      $(this.$refs.dataSourceSelect).select2({
         data: this.sortDataSourceEntries(this.dataSources),
         placeholder: '-- Select a data source',
-        templateResult: this.formatState,
-        templateSelection: this.formatState,
+        templateResult: this.formatItem,
+        templateSelection: this.formatItem,
         width: '100%',
         matcher: this.customDataSourceSearch,
         dropdownAutoWidth: false
       });
     },
-    select2Listeners: function() {
+    initHandlers: function() {
       const $vm = this;
-      const $select2Ref = $(this.$refs.selectDatasource);
+      const $select2Ref = $(this.$refs.dataSourceSelect);
       const $dataSourceSelector = $('.data-source-selector');
 
       $select2Ref.on('select2:select', function(e) {
@@ -137,46 +136,29 @@ export default {
 
       return 0;
     },
-    formatState: function(state) {
-      if (state.id === 'none' || state.id === 'currentAppDataSources' || state.id === 'otherDataSources') {
+    formatItem: function(...{id, text, name}) {
+      if (['none', 'currentAppDataSources', 'otherDataSources'].includes(id)) {
         return $(
-          '<span class="select2-value-holder">' + state.text + '</span>'
-        );
-      }
-      if (state.id === 'new') {
-        return $(
-          '<span class="select2-value-holder">' + state.text + '</span>'
-        );
-      }
-      if (state.id === '------') {
-        return $(
-          '<span class="select2-value-holder">' + state.text + '</span>'
-        );
-      }
-      if (typeof state.name === 'undefined' && typeof state.text !== 'undefined') {
-        return $(
-          '<span class="select2-value-holder">' + state.text + ' <small>ID: ' + state.id + '</small></span>'
+          `<span class="select2-value-holder"> ${ text } </span>`
         );
       }
 
       return $(
-        '<span class="select2-value-holder">' + state.name + ' <small>ID: ' + state.id + '</small></span>'
+        `<span class="select2-value-holder"> ${ name || text } <small>ID: ${ id } </small></span>`
       );
     },
-    setSelectedDS: function(selectedDS) {
-      if (!selectedDS) {
+    setSelectedValue: function(value) {
+      if (!value) {
         return;
       }
 
-      const $select2 = $(this.$refs.selectDatasource);
-
-      $select2.val(selectedDS.id).trigger('change');
+      $(this.$refs.dataSourceSelect).val(value).trigger('change');
     }
   },
   mounted: function() {
     this.initSelect2();
-    this.select2Listeners();
-    this.setSelectedDS(this.selectedDataSource);
+    this.initHandlers();
+    this.setSelectedValue(this.selectedDataSource);
   },
   updated: function() {
   }

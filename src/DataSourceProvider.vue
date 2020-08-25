@@ -12,14 +12,14 @@
         :selectedDataSource="selectedDataSource"
         :changeDataSource="changeDataSource"
         :showAll="showAll"
-        @selectedDataSource="(event) => { selectedDataSource = event }"
+        @selectedDataSource="(dataSource) => { selectedDataSource = dataSource }"
         @onDataSourceCreate="createDS"
         @onShowAll="(event) => { showAllDataSources(event) }"
         @onDataSourceChange="changeDataSource = !changeDataSource"
       >
       </DataSourceSelector>
       <SecurityNotifier v-show="selectedDataSource"
-        :securityEnabled="isAccessRulesPresents()"
+        :securityEnabled="hasAccessRules()"
         @updateSecurityRules="updateSecurityDefaults"
       >
       </SecurityNotifier>
@@ -43,15 +43,15 @@ export default {
       hasError: false,
       errorMessage: '',
       widgetData: {},
-      selectedDataSource: false,
+      selectedDataSource: null,
       changeDataSource: false,
       showAll: false
     };
   },
   methods: {
-    isAccessRulesPresents: function() {
+    hasAccessRules: function() {
       if (!this.selectedDataSource) {
-        return;
+        return false;
       }
 
       if (this.selectedDataSource.accessRules === null || !this.selectedDataSource.accessRules.length) {
