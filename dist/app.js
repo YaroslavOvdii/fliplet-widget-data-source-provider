@@ -169,27 +169,41 @@ var render = function() {
         )
       : _c(
           "div",
+          { staticClass: "main-data-source-provider" },
           [
             _c("DataSourceSelector", {
               attrs: {
-                currentAppDSs: _vm.appDataSorces,
-                otherDSs: _vm.allDataSources,
+                currentAppDataSources: _vm.appDataSources,
+                otherDataSources: _vm.allDataSources,
                 selectedDataSource: _vm.selectedDataSource,
                 changeDataSource: _vm.changeDataSource,
                 showAll: _vm.showAll
               },
               on: {
-                selectedDataSourceId: function($event) {
-                  _vm.selectedDataSourceId = _vm.$emit
+                selectedDataSource: function(event) {
+                  _vm.selectedDataSource = event
                 },
                 onDataSourceCreate: _vm.createDS,
                 onShowAll: function(event) {
-                  _vm.showAllDSs(event)
+                  _vm.showAllDataSources(event)
                 },
                 onDataSourceChange: function($event) {
                   _vm.changeDataSource = !_vm.changeDataSource
                 }
               }
+            }),
+            _vm._v(" "),
+            _c("SecurityNotifier", {
+              directives: [
+                {
+                  name: "show",
+                  rawName: "v-show",
+                  value: _vm.selectedDataSource,
+                  expression: "selectedDataSource"
+                }
+              ],
+              attrs: { securityEnabled: _vm.isAccessRulesPresents() },
+              on: { updateSecurityRules: _vm.updateSecurityDefaults }
             })
           ],
           1
@@ -219,9 +233,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _components_DataSourceSelector__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(12);
-/* harmony import */ var _services_getDataSources__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
-/* harmony import */ var _services_createDataSource__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(25);
+/* harmony import */ var _components_SecurityNotifier__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
+/* harmony import */ var _services_dataSource__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(29);
 
+//
+//
+//
+//
+//
 //
 //
 //
@@ -253,24 +272,48 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
-      appDataSorces: [],
+      appDataSources: [],
       allDataSources: [],
       copyOfAllDataSources: [],
       isLoading: true,
       hasError: false,
       errorMessage: '',
       widgetData: {},
-      selectedDataSourceId: false,
+      selectedDataSource: false,
       changeDataSource: false,
       showAll: false
     };
   },
-  components: {
-    DataSourceSelector: _components_DataSourceSelector__WEBPACK_IMPORTED_MODULE_1__["default"]
-  },
   methods: {
-    showAllDSs: function showAllDSs(isChecked) {
+    isAccessRulesPresents: function isAccessRulesPresents() {
+      if (!this.selectedDataSource) {
+        return;
+      }
+
+      if (this.selectedDataSource.accessRules === null || !this.selectedDataSource.accessRules.length) {
+        return false;
+      }
+
+      return true;
+    },
+    updateSecurityDefaults: function updateSecurityDefaults() {
       var _this = this;
+
+      this.isLoading = true;
+      this.selectedDataSource.accessRules = this.widgetData.accessRules;
+      Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["updateDataSourceSecurityRules"])(this.selectedDataSource.id, this.selectedDataSource.accessRules).then(function () {
+        Fliplet.Modal.alert({
+          message: 'Your changes have been applied to all affected apps.'
+        });
+      })["catch"](function (err) {
+        _this.hasError = true;
+        _this.errorMessage = Fliplet.parseError(err);
+      })["finally"](function () {
+        _this.isLoading = false;
+      });
+    },
+    showAllDataSources: function showAllDataSources(isChecked) {
+      var _this2 = this;
 
       this.isLoading = true;
       this.showAll = isChecked;
@@ -289,40 +332,43 @@ __webpack_require__.r(__webpack_exports__);
 
 
       setTimeout(function () {
-        _this.isLoading = false;
+        _this2.isLoading = false;
       }, 100);
     },
     loadDataSources: function loadDataSources(appId) {
-      var _this2 = this;
+      var _this3 = this;
 
       this.isLoading = true;
-      Object(_services_getDataSources__WEBPACK_IMPORTED_MODULE_2__["getDataSources"])(appId).then(function (dataSources) {
-        if (_this2.widgetData.dataSourceId) {
-          _this2.selectedDataSource = dataSources.find(function (dataSource) {
-            return dataSource.id === _this2.widgetData.dataSourceId;
+      Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["getDataSources"])(appId).then(function (dataSources) {
+        if (_this3.widgetData.dataSourceId) {
+          _this3.selectedDataSource = dataSources.find(function (dataSource) {
+            return dataSource.id === _this3.widgetData.dataSourceId;
           });
 
-          if (!_this2.selectedDataSource) {
-            return Object(_services_getDataSources__WEBPACK_IMPORTED_MODULE_2__["getDataSource"])(_this2.widgetData.dataSourceId).then(function (dataSorce) {
-              _this2.selectedDataSource = dataSorce;
+          if (!_this3.selectedDataSource) {
+            return Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["getDataSource"])(_this3.widgetData.dataSourceId).then(function (dataSorce) {
+              _this3.selectedDataSource = dataSorce;
               dataSources.push(dataSorce);
               return dataSources;
             });
           }
+        } else {
+          // To insure that user can reselect data source after first selection
+          _this3.changeDataSource = true;
         }
 
         return dataSources;
       }).then(function (dataSources) {
         if (appId) {
-          _this2.appDataSorces = dataSources;
+          _this3.appDataSources = dataSources;
         } else {
-          _this2.allDataSources = dataSources;
+          _this3.allDataSources = dataSources;
         }
       })["catch"](function (err) {
-        _this2.hasError = true;
-        _this2.errorMessage = Fliplet.parseError(err);
+        _this3.hasError = true;
+        _this3.errorMessage = Fliplet.parseError(err);
       })["finally"](function () {
-        _this2.isLoading = false;
+        _this3.isLoading = false;
         Fliplet.Widget.autosize();
       });
     },
@@ -331,25 +377,37 @@ __webpack_require__.r(__webpack_exports__);
       this.loadDataSources(this.widgetData.appId);
     },
     createDS: function createDS() {
-      var _this3 = this;
+      var _this4 = this;
 
       this.isLoading = true;
-      Object(_services_createDataSource__WEBPACK_IMPORTED_MODULE_3__["createDataSource"])(this.widgetData).then(function (dataSource) {
+      Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["createDataSource"])(this.widgetData).then(function (dataSource) {
         if (!dataSource) {
           return;
         }
 
-        _this3.selectedDataSource = dataSource;
+        _this4.selectedDataSource = dataSource;
       })["catch"](function (err) {
-        _this3.hasError = true;
-        _this3.errorMessage = Fliplet.parseError(err);
+        _this4.hasError = true;
+        _this4.errorMessage = Fliplet.parseError(err);
       })["finally"](function () {
-        _this3.isLoading = false;
+        _this4.isLoading = false;
       });
-    }
+    },
+    saveRequestListener: function saveRequestListener() {}
+  },
+  components: {
+    DataSourceSelector: _components_DataSourceSelector__WEBPACK_IMPORTED_MODULE_1__["default"],
+    SecurityNotifier: _components_SecurityNotifier__WEBPACK_IMPORTED_MODULE_2__["default"]
   },
   mounted: function mounted() {
     this.initProvider();
+    var $vm = this; // Transfer selected DataSource id to the parent
+
+    Fliplet.Widget.onSaveRequest(function () {
+      Fliplet.Widget.save({
+        id: $vm.selectedDataSource ? $vm.selectedDataSource.id : undefined
+      });
+    });
   },
   updated: function updated() {
     Fliplet.Widget.autosize();
@@ -497,7 +555,7 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c("section", [
+  return _c("section", { staticClass: "data-source-selector" }, [
     _vm.dataSources.length && !_vm.selectedDataSource
       ? _c(
           "div",
@@ -514,7 +572,7 @@ var render = function() {
               "span",
               {
                 staticClass: "btn-link create-dataSource",
-                on: { click: _vm.showAllDSs }
+                on: { click: _vm.showAllDataSources }
               },
               [_vm._v("Create new data source")]
             ),
@@ -523,7 +581,7 @@ var render = function() {
               _c("input", {
                 attrs: { type: "checkbox", name: "showAll", id: "showAll" },
                 domProps: { checked: _vm.showAll },
-                on: { change: _vm.showAllDSs }
+                on: { change: _vm.showAllDataSources }
               }),
               _vm._v(" "),
               _vm._m(0)
@@ -594,7 +652,7 @@ var render = function() {
               _c("input", {
                 attrs: { type: "checkbox", name: "showAll", id: "showAll" },
                 domProps: { checked: _vm.showAll },
-                on: { change: _vm.showAllDSs }
+                on: { change: _vm.showAllDataSources }
               }),
               _vm._v(" "),
               _vm._m(1)
@@ -702,13 +760,13 @@ __webpack_require__.r(__webpack_exports__);
     };
   },
   props: {
-    currentAppDSs: {
+    currentAppDataSources: {
       type: Array,
       "default": function _default() {
         return [];
       }
     },
-    otherDSs: {
+    otherDataSources: {
       type: Array,
       "default": function _default() {
         return [];
@@ -730,43 +788,43 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   methods: {
-    showAllDSs: function showAllDSs() {
+    showAllDataSources: function showAllDataSources() {
       this.$emit('onShowAll', !this.showAll);
       this.prepareData();
     },
     prepareData: function prepareData() {
-      // If otherDSs array is empty it means that we show user only ds's for current app
-      if (!this.otherDSs.length) {
-        return this.currentAppDSs;
+      // If otherDataSources array is empty it means that we show user only ds's for current app
+      if (!this.otherDataSources.length) {
+        return this.currentAppDataSources;
       }
 
       var groupedDataSources = [{
-        id: 'currentAppDSs',
+        id: 'currentAppDataSources',
         text: 'This app',
         name: 'currentApp',
         children: []
       }, {
-        id: 'otherDSs',
+        id: 'otherDataSources',
         text: 'Other apps',
         name: 'otherApp',
         children: []
       }];
-      groupedDataSources[0].children = this.currentAppDSs;
-      groupedDataSources[1].children = this.filterOtherAppsArray(this.otherDSs);
+      groupedDataSources[0].children = this.currentAppDataSources;
+      groupedDataSources[1].children = this.filterOtherAppsArray(this.otherDataSources);
       return groupedDataSources;
     },
     filterOtherAppsArray: function filterOtherAppsArray(filterDS) {
       var _this = this;
 
       return filterDS.filter(function (ds) {
-        return _this.currentAppDSs.findIndex(function (currDS) {
+        return _this.currentAppDataSources.findIndex(function (currDS) {
           return currDS.id === ds.id;
         }) === -1;
       });
     },
     setDataSource: function setDataSource(dataSource) {
       this.selectedDataSource = dataSource;
-      this.$emit('selectedDataSourceId', dataSource);
+      this.$emit('selectedDataSource', dataSource);
     },
     viewDataSource: function viewDataSource() {
       Fliplet.Studio.emit('overlay', {
@@ -852,19 +910,23 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c(
-    "select",
-    {
-      ref: "selectDatasource",
-      staticClass: "hidden-select form-control",
-      attrs: { name: "selectDatasource", "data-label": "select" }
-    },
-    [
-      _c("option", { attrs: { value: "none", disable: "" } }, [
-        _vm._v("-- Select data source")
-      ])
-    ]
-  )
+  return _c("section", [
+    _c(
+      "select",
+      {
+        ref: "selectDatasource",
+        staticClass: "hidden-select form-control",
+        attrs: { name: "selectDatasource", "data-label": "select" }
+      },
+      [
+        _c("option", { attrs: { value: "none", disable: "" } }, [
+          _vm._v("-- Select data source")
+        ])
+      ]
+    ),
+    _vm._v(" "),
+    _c("div", { ref: "dropdownHolder", staticClass: "dropdown-holder" })
+  ])
 }
 var staticRenderFns = []
 render._withStripped = true
@@ -886,14 +948,20 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(22);
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(22);
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__);
+
 
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0___default()(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1___default()(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
+//
+//
+//
 //
 //
 //
@@ -916,7 +984,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
     }
   },
   methods: {
-    customDsSearch: function customDsSearch(params, data) {
+    customDataSourceSearch: function customDataSourceSearch(params, data) {
       // If there are no search terms, return all of the data
       if (!params.term) {
         return data;
@@ -927,7 +995,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
         return null;
       }
 
-      var term = params.term.toLowerCase(); // Search when we get DSs for all aps
+      var term = params.term.toLowerCase(); // Search when we get DataSources for all aps
 
       if (data.children) {
         var matchedChildren = data.children.filter(function (child) {
@@ -957,36 +1025,75 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
     },
     initSelect2: function initSelect2() {
       $(this.$refs.selectDatasource).select2({
-        data: this.dataSources,
+        data: this.sortDataSourceEntries(this.dataSources),
         placeholder: '-- Select a data source',
         templateResult: this.formatState,
         templateSelection: this.formatState,
         width: '100%',
-        matcher: this.customDsSearch,
+        matcher: this.customDataSourceSearch,
         dropdownAutoWidth: false
       });
     },
     select2Listeners: function select2Listeners() {
       var $vm = this;
       var $select2Ref = $(this.$refs.selectDatasource);
+      var $dataSourceSelector = $('.data-source-selector');
       $select2Ref.on('select2:select', function (e) {
         $vm.$emit('selectDataSource', e.params.data);
       });
       $select2Ref.on('select2:open', function () {
-        $($('span.select2-container.select2-container--default.select2-container--open')[1]).css('position', 'relative');
+        $dataSourceSelector.css('paddingBottom', '110px');
         Fliplet.Widget.autosize();
         setTimeout(function () {
-          $($('span.select2-container.select2-container--default.select2-container--open')[1]).css('position', 'absolute');
-        }, 250);
+          $dataSourceSelector.css('paddingBottom', '45px');
+        }, 50);
       });
       $select2Ref.on('select2:close', function () {
         setTimeout(function () {
+          $dataSourceSelector.css('paddingBottom', '0');
           Fliplet.Widget.autosize();
         }, 100);
       });
     },
+    sortDataSourceEntries: function sortDataSourceEntries(dataSources) {
+      var copyDataSources = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default()(dataSources);
+
+      if (copyDataSources[0].children) {
+        copyDataSources[0].children.sort(this.sortArray);
+        copyDataSources[1].children.sort(this.sortArray);
+      } else {
+        copyDataSources.sort(this.sortArray);
+      }
+
+      return copyDataSources;
+    },
+    sortArray: function sortArray(a, b) {
+      // Sort data source array by name
+      // Send names that starts with number to the end of the list
+      var startsWithAlphabet = /^[A-Z,a-z]/;
+      var aValue = a.name ? a.name.toUpperCase() : '}';
+      var bValue = b.name ? b.name.toUpperCase() : '}';
+
+      if (!startsWithAlphabet.test(bValue)) {
+        bValue = "{".concat(bValue);
+      }
+
+      if (!startsWithAlphabet.test(aValue)) {
+        aValue = "{".concat(aValue);
+      }
+
+      if (aValue < bValue) {
+        return -1;
+      }
+
+      if (aValue > bValue) {
+        return 1;
+      }
+
+      return 0;
+    },
     formatState: function formatState(state) {
-      if (state.id === 'none' || state.id === 'currentAppDSs' || state.id === 'otherDSs') {
+      if (state.id === 'none' || state.id === 'currentAppDataSources' || state.id === 'otherDataSources') {
         return $('<span class="select2-value-holder">' + state.text + '</span>');
       }
 
@@ -1155,8 +1262,150 @@ function normalizeComponent (
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(25);
+/* harmony import */ var _SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(23);
+
+
+
+
+
+/* normalize component */
+
+var component = Object(_node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__["default"])(
+  _SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__["default"],
+  _SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__["render"],
+  _SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"],
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* hot reload */
+if (false) { var api; }
+component.options.__file = "src/components/SecurityNotifier.vue"
+/* harmony default export */ __webpack_exports__["default"] = (component.exports);
+
+/***/ }),
+/* 25 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(26);
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "render", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__["render"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"]; });
+
+
+
+/***/ }),
+/* 26 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "render", function() { return render; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return staticRenderFns; });
+var render = function() {
+  var this$1 = this
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c("section", { staticClass: "security-notify" }, [
+    !_vm.securityEnabled
+      ? _c("div", { staticClass: "alert alert-warning" }, [
+          _vm._m(0),
+          _vm._v(" "),
+          _c("p", [
+            _vm._v("Configure security rules so the app can access the data")
+          ]),
+          _vm._v(" "),
+          _c(
+            "div",
+            {
+              staticClass: "btn btn-primary security-btn",
+              on: {
+                click: function() {
+                  this$1.$emit("updateSecurityRules")
+                }
+              }
+            },
+            [_vm._v("Configure security rules")]
+          )
+        ])
+      : _vm.securityEnabled
+      ? _c("div", { staticClass: "alert alert-success" }, [
+          _vm._v("\n    Security rules added. To manage security rules click "),
+          _c("b", [_vm._v("View data source")]),
+          _vm._v(" above.\n  ")
+        ])
+      : _vm._e()
+  ])
+}
+var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("p", [
+      _c("b", [_vm._v("This data source is missing security rules.")])
+    ])
+  }
+]
+render._withStripped = true
+
+
+
+/***/ }),
+/* 27 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_ref_3_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(28);
+/* empty/unused harmony star reexport */ /* harmony default export */ __webpack_exports__["default"] = (_node_modules_babel_loader_lib_index_js_ref_3_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__["default"]); 
+
+/***/ }),
+/* 28 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+/* harmony default export */ __webpack_exports__["default"] = ({
+  props: {
+    securityEnabled: {
+      type: Boolean,
+      "default": false
+    }
+  }
+});
+
+/***/ }),
+/* 29 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getDataSources", function() { return getDataSources; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getDataSource", function() { return getDataSource; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createDataSource", function() { return createDataSource; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "updateDataSourceSecurityRules", function() { return updateDataSourceSecurityRules; });
 var getDataSources = function getDataSources(appId) {
   var getOptions = appId ? {
     appId: appId
@@ -1166,14 +1415,6 @@ var getDataSources = function getDataSources(appId) {
 var getDataSource = function getDataSource(dataSourceId) {
   return Fliplet.DataSources.getById(dataSourceId);
 };
-
-/***/ }),
-/* 25 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createDataSource", function() { return createDataSource; });
 var createDataSource = function createDataSource(widgetData) {
   return Fliplet.Modal.prompt({
     title: 'Enter a name for the data source',
@@ -1197,6 +1438,11 @@ var createDataSource = function createDataSource(widgetData) {
       entries: widgetData.defaults.entries.entries,
       columns: widgetData.defaults.entries.columns
     });
+  });
+};
+var updateDataSourceSecurityRules = function updateDataSourceSecurityRules(dataSourceId, securityRules) {
+  return Fliplet.DataSources.update(dataSourceId, {
+    accessRules: securityRules
   });
 };
 

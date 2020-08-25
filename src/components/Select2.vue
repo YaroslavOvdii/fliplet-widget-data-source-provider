@@ -1,7 +1,10 @@
 <template>
-  <select name="selectDatasource" ref="selectDatasource" data-label="select" class="hidden-select form-control">
-    <option value="none" disable>-- Select data source</option>
-  </select>
+  <section>
+    <select name="selectDatasource" ref="selectDatasource" data-label="select" class="hidden-select form-control">
+      <option value="none" disable>-- Select data source</option>
+    </select>
+    <div class="dropdown-holder" ref="dropdownHolder"></div>
+  </section>
 </template>
 
 <script>
@@ -64,7 +67,7 @@ export default {
     },
     initSelect2: function() {
       $(this.$refs.selectDatasource).select2({
-        data: this.dataSources,
+        data: this.sortDataSourceEntries(this.dataSources),
         placeholder: '-- Select a data source',
         templateResult: this.formatState,
         templateSelection: this.formatState,
@@ -76,25 +79,63 @@ export default {
     select2Listeners: function() {
       const $vm = this;
       const $select2Ref = $(this.$refs.selectDatasource);
+      const $dataSourceSelector = $('.data-source-selector');
 
       $select2Ref.on('select2:select', function(e) {
         $vm.$emit('selectDataSource', e.params.data);
       });
 
       $select2Ref.on('select2:open', function() {
-        $($('span.select2-container.select2-container--default.select2-container--open')[1]).css('position', 'relative');
-
+        $dataSourceSelector.css('paddingBottom', '110px');
         Fliplet.Widget.autosize();
+
         setTimeout(() => {
-          $($('span.select2-container.select2-container--default.select2-container--open')[1]).css('position', 'absolute');
-        }, 250);
+          $dataSourceSelector.css('paddingBottom', '45px');
+        }, 50);
       });
 
       $select2Ref.on('select2:close', function() {
         setTimeout(() => {
+          $dataSourceSelector.css('paddingBottom', '0');
           Fliplet.Widget.autosize();
         }, 100);
       });
+    },
+    sortDataSourceEntries: function(dataSources) {
+      const copyDataSources = [...dataSources];
+
+      if (copyDataSources[0].children) {
+        copyDataSources[0].children.sort(this.sortArray);
+        copyDataSources[1].children.sort(this.sortArray);
+      } else {
+        copyDataSources.sort(this.sortArray);
+      }
+
+      return copyDataSources;
+    },
+    sortArray: function(a, b) {
+      // Sort data source array by name
+      // Send names that starts with number to the end of the list
+      const startsWithAlphabet = /^[A-Z,a-z]/;
+      let aValue = a.name ? a.name.toUpperCase() : '}';
+      let bValue = b.name ? b.name.toUpperCase() : '}';
+
+      if (!startsWithAlphabet.test(bValue)) {
+        bValue = `{${bValue}`;
+      }
+
+      if (!startsWithAlphabet.test(aValue)) {
+        aValue = `{${aValue}`;
+      }
+
+      if (aValue < bValue) {
+        return -1;
+      }
+      if (aValue > bValue) {
+        return 1;
+      }
+
+      return 0;
     },
     formatState: function(state) {
       if (state.id === 'none' || state.id === 'currentAppDataSources' || state.id === 'otherDataSources') {

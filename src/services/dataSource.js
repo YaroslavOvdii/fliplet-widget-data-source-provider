@@ -35,3 +35,9 @@ export const createDataSource = (widgetData) => {
       });
     });
 };
+
+export const updateDataSourceSecurityRules = (dataSourceId, securityRules) => {
+  return Fliplet.DataSources.update(dataSourceId, {
+    accessRules: securityRules
+  });
+};

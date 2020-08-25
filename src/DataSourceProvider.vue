@@ -6,18 +6,23 @@
     <div v-else-if="hasError" class="alert alert-danger" role="alert">
       {{ errorMessage }}
     </div>
-    <div v-else>
+    <div v-else class="main-data-source-provider">
       <DataSourceSelector
         :currentAppDataSources="appDataSources" :otherDataSources="allDataSources"
         :selectedDataSource="selectedDataSource"
         :changeDataSource="changeDataSource"
         :showAll="showAll"
-        @selectedDataSourceId="selectedDataSourceId = $emit"
+        @selectedDataSource="(event) => { selectedDataSource = event }"
         @onDataSourceCreate="createDS"
         @onShowAll="(event) => { showAllDataSources(event) }"
         @onDataSourceChange="changeDataSource = !changeDataSource"
       >
       </DataSourceSelector>
+      <SecurityNotifier v-show="selectedDataSource"
+        :securityEnabled="isAccessRulesPresents()"
+        @updateSecurityRules="updateSecurityDefaults"
+      >
+      </SecurityNotifier>
     </div>
   </section>
 
@@ -25,7 +30,8 @@
 
 <script>
 import DataSourceSelector from './components/DataSourceSelector';
-import { getDataSources, getDataSource, createDataSource } from './services/dataSource';
+import SecurityNotifier from './components/SecurityNotifier';
+import { getDataSources, getDataSource, createDataSource, updateDataSourceSecurityRules } from './services/dataSource';
 
 export default {
   data() {
@@ -37,15 +43,41 @@ export default {
       hasError: false,
       errorMessage: '',
       widgetData: {},
-      selectedDataSourceId: false,
+      selectedDataSource: false,
       changeDataSource: false,
       showAll: false
     };
   },
-  components: {
-    DataSourceSelector
-  },
   methods: {
+    isAccessRulesPresents: function() {
+      if (!this.selectedDataSource) {
+        return;
+      }
+
+      if (this.selectedDataSource.accessRules === null || !this.selectedDataSource.accessRules.length) {
+        return false;
+      }
+
+      return true;
+    },
+    updateSecurityDefaults: function() {
+      this.isLoading = true;
+      this.selectedDataSource.accessRules = this.widgetData.accessRules;
+
+      updateDataSourceSecurityRules(this.selectedDataSource.id, this.selectedDataSource.accessRules)
+        .then(() => {
+          Fliplet.Modal.alert({
+            message: 'Your changes have been applied to all affected apps.'
+          });
+        })
+        .catch(err => {
+          this.hasError = true;
+          this.errorMessage = Fliplet.parseError(err);
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    },
     showAllDataSources: function(isChecked) {
       this.isLoading = true;
       this.showAll = isChecked;
@@ -83,6 +115,9 @@ export default {
                   return dataSources;
                 });
             }
+          } else {
+            // To insure that user can reselect data source after first selection
+            this.changeDataSource = true;
           }
 
           return dataSources;
@@ -126,10 +161,23 @@ export default {
         .finally(() => {
           this.isLoading = false;
         });
+    },
+    saveRequestListener: function() {
     }
+  },
+  components: {
+    DataSourceSelector,
+    SecurityNotifier
   },
   mounted: function() {
     this.initProvider();
+
+    const $vm = this;
+
+    // Transfer selected DataSource id to the parent
+    Fliplet.Widget.onSaveRequest(function() {
+      Fliplet.Widget.save({id: $vm.selectedDataSource ? $vm.selectedDataSource.id : undefined});
+    });
   },
   updated: function() {
     Fliplet.Widget.autosize();

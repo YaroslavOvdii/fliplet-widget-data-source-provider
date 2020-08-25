@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="data-source-selector">
     <div v-if="dataSources.length && !selectedDataSource">
       <Select2 :dataSources="dataSources" :selectedDataSource="selectedDataSource" @selectDataSource="setDataSource"></Select2>
       <span @click="showAllDataSources" class="btn-link create-dataSource">Create new data source</span>
@@ -110,7 +110,7 @@ export default {
     setDataSource: function(dataSource) {
       this.selectedDataSource = dataSource;
 
-      this.$emit('selectedDataSourceId', dataSource);
+      this.$emit('selectedDataSource', dataSource);
     },
     viewDataSource: function() {
       Fliplet.Studio.emit('overlay', {
