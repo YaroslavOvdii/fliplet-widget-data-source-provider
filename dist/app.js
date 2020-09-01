@@ -180,10 +180,10 @@ var render = function() {
                 showAll: _vm.showAll
               },
               on: {
-                selectedDataSource: function(event) {
-                  _vm.selectedDataSource = event
+                selectedDataSource: function(dataSource) {
+                  _vm.selectedDataSource = dataSource
                 },
-                onDataSourceCreate: _vm.createDS,
+                onDataSourceCreate: _vm.onDataSourceCreate,
                 onShowAll: function(event) {
                   _vm.showAllDataSources(event)
                 },
@@ -202,7 +202,7 @@ var render = function() {
                   expression: "selectedDataSource"
                 }
               ],
-              attrs: { securityEnabled: _vm.isAccessRulesPresents() },
+              attrs: { securityEnabled: _vm.hasAccessRules() },
               on: { updateSecurityRules: _vm.updateSecurityDefaults }
             })
           ],
@@ -279,15 +279,15 @@ __webpack_require__.r(__webpack_exports__);
       hasError: false,
       errorMessage: '',
       widgetData: {},
-      selectedDataSource: false,
+      selectedDataSource: null,
       changeDataSource: false,
       showAll: false
     };
   },
   methods: {
-    isAccessRulesPresents: function isAccessRulesPresents() {
+    hasAccessRules: function hasAccessRules() {
       if (!this.selectedDataSource) {
-        return;
+        return false;
       }
 
       if (this.selectedDataSource.accessRules === null || !this.selectedDataSource.accessRules.length) {
@@ -342,7 +342,7 @@ __webpack_require__.r(__webpack_exports__);
       Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["getDataSources"])(appId).then(function (dataSources) {
         if (_this3.widgetData.dataSourceId) {
           _this3.selectedDataSource = dataSources.find(function (dataSource) {
-            return dataSource.id === _this3.widgetData.dataSourceId;
+            return dataSource.id === parseInt(_this3.widgetData.dataSourceId, 10);
           });
 
           if (!_this3.selectedDataSource) {
@@ -359,6 +359,13 @@ __webpack_require__.r(__webpack_exports__);
 
         return dataSources;
       }).then(function (dataSources) {
+        if (_this3.selectedDataSource) {
+          Fliplet.Widget.emit('showColumns', {
+            columns: _this3.selectedDataSource.columns,
+            id: _this3.selectedDataSource.id
+          });
+        }
+
         if (appId) {
           _this3.appDataSources = dataSources;
         } else {
@@ -376,7 +383,7 @@ __webpack_require__.r(__webpack_exports__);
       this.widgetData = Fliplet.Widget.getData();
       this.loadDataSources(this.widgetData.appId);
     },
-    createDS: function createDS() {
+    onDataSourceCreate: function onDataSourceCreate() {
       var _this4 = this;
 
       this.isLoading = true;
@@ -386,6 +393,12 @@ __webpack_require__.r(__webpack_exports__);
         }
 
         _this4.selectedDataSource = dataSource;
+
+        if (_this4.allDataSources.length) {
+          _this4.allDataSources[0].children.push(dataSource);
+        }
+
+        _this4.appDataSources.push(dataSource);
       })["catch"](function (err) {
         _this4.hasError = true;
         _this4.errorMessage = Fliplet.parseError(err);
@@ -563,7 +576,8 @@ var render = function() {
             _c("Select2", {
               attrs: {
                 dataSources: _vm.dataSources,
-                selectedDataSource: _vm.selectedDataSource
+                selectedDataSourceId:
+                  _vm.selectedDataSource && _vm.selectedDataSource.id
               },
               on: { selectDataSource: _vm.setDataSource }
             }),
@@ -572,7 +586,11 @@ var render = function() {
               "span",
               {
                 staticClass: "btn-link create-dataSource",
-                on: { click: _vm.showAllDataSources }
+                on: {
+                  click: function() {
+                    this$1.$emit("onDataSourceCreate")
+                  }
+                }
               },
               [_vm._v("Create new data source")]
             ),
@@ -630,7 +648,8 @@ var render = function() {
             _c("Select2", {
               attrs: {
                 dataSources: _vm.dataSources,
-                selectedDataSource: _vm.selectedDataSource
+                selectedDataSourceId:
+                  _vm.selectedDataSource && _vm.selectedDataSource.id
               },
               on: { selectDataSource: _vm.setDataSource }
             }),
@@ -716,6 +735,12 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Select2__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -914,7 +939,7 @@ var render = function() {
     _c(
       "select",
       {
-        ref: "selectDatasource",
+        ref: "dataSourceSelect",
         staticClass: "hidden-select form-control",
         attrs: { name: "selectDatasource", "data-label": "select" }
       },
@@ -923,9 +948,7 @@ var render = function() {
           _vm._v("-- Select data source")
         ])
       ]
-    ),
-    _vm._v(" "),
-    _c("div", { ref: "dropdownHolder", staticClass: "dropdown-holder" })
+    )
   ])
 }
 var staticRenderFns = []
@@ -967,7 +990,6 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 //
 //
 //
-//
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: {
     dataSources: {
@@ -976,11 +998,8 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
         return [];
       }
     },
-    selectedDataSource: {
-      type: Object,
-      "default": function _default() {
-        return {};
-      }
+    selectedDataSourceId: {
+      type: Number
     }
   },
   methods: {
@@ -1024,22 +1043,26 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
       return null;
     },
     initSelect2: function initSelect2() {
-      $(this.$refs.selectDatasource).select2({
+      $(this.$refs.dataSourceSelect).select2({
         data: this.sortDataSourceEntries(this.dataSources),
         placeholder: '-- Select a data source',
-        templateResult: this.formatState,
-        templateSelection: this.formatState,
+        templateResult: this.formatItem,
+        templateSelection: this.formatItem,
         width: '100%',
         matcher: this.customDataSourceSearch,
         dropdownAutoWidth: false
       });
     },
-    select2Listeners: function select2Listeners() {
+    initHandlers: function initHandlers() {
       var $vm = this;
-      var $select2Ref = $(this.$refs.selectDatasource);
+      var $select2Ref = $(this.$refs.dataSourceSelect);
       var $dataSourceSelector = $('.data-source-selector');
       $select2Ref.on('select2:select', function (e) {
         $vm.$emit('selectDataSource', e.params.data);
+        Fliplet.Widget.emit('showColumns', {
+          columns: e.params.data.columns,
+          id: e.params.data.id
+        });
       });
       $select2Ref.on('select2:open', function () {
         $dataSourceSelector.css('paddingBottom', '110px');
@@ -1092,40 +1115,30 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
       return 0;
     },
-    formatState: function formatState(state) {
-      if (state.id === 'none' || state.id === 'currentAppDataSources' || state.id === 'otherDataSources') {
-        return $('<span class="select2-value-holder">' + state.text + '</span>');
+    formatItem: function formatItem(state) {
+      var id = state.id,
+          name = state.name,
+          text = state.text;
+
+      if (['none', 'currentAppDataSources', 'otherDataSources', ''].includes(id)) {
+        return $("<span class=\"select2-value-holder\"> ".concat(text, " </span>"));
       }
 
-      if (state.id === 'new') {
-        return $('<span class="select2-value-holder">' + state.text + '</span>');
-      }
-
-      if (state.id === '------') {
-        return $('<span class="select2-value-holder">' + state.text + '</span>');
-      }
-
-      if (typeof state.name === 'undefined' && typeof state.text !== 'undefined') {
-        return $('<span class="select2-value-holder">' + state.text + ' <small>ID: ' + state.id + '</small></span>');
-      }
-
-      return $('<span class="select2-value-holder">' + state.name + ' <small>ID: ' + state.id + '</small></span>');
+      return $("<span class=\"select2-value-holder\"> ".concat(name || text, " <small>ID: ").concat(id, " </small></span>"));
     },
-    setSelectedDS: function setSelectedDS(selectedDS) {
-      if (!selectedDS) {
+    setSelectedValue: function setSelectedValue(value) {
+      if (!value) {
         return;
       }
 
-      var $select2 = $(this.$refs.selectDatasource);
-      $select2.val(selectedDS.id).trigger('change');
+      $(this.$refs.dataSourceSelect).val(value).trigger('change');
     }
   },
   mounted: function mounted() {
     this.initSelect2();
-    this.select2Listeners();
-    this.setSelectedDS(this.selectedDataSource);
-  },
-  updated: function updated() {}
+    this.initHandlers();
+    this.setSelectedValue(this.selectedDataSourceId);
+  }
 });
 
 /***/ }),
@@ -1418,7 +1431,7 @@ var getDataSource = function getDataSource(dataSourceId) {
 var createDataSource = function createDataSource(widgetData) {
   return Fliplet.Modal.prompt({
     title: 'Enter a name for the data source',
-    "default": widgetData["default"].name
+    value: widgetData["default"].name
   }).then(function (dataSourceName) {
     if (dataSourceName === null) {
       return false;
@@ -1435,8 +1448,8 @@ var createDataSource = function createDataSource(widgetData) {
     return Fliplet.DataSources.create({
       name: dataSourceName,
       appId: widgetData.appId,
-      entries: widgetData.defaults.entries.entries,
-      columns: widgetData.defaults.entries.columns
+      entries: widgetData["default"].entries,
+      columns: widgetData["default"].columns
     });
   });
 };

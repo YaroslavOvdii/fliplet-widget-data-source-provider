@@ -11,7 +11,7 @@ export const getDataSource = (dataSourceId) => {
 export const createDataSource = (widgetData) => {
   return Fliplet.Modal.prompt({
     title: 'Enter a name for the data source',
-    default: widgetData.default.name
+    value: widgetData.default.name
   })
     .then(dataSourceName => {
       if (dataSourceName === null) {
@@ -30,8 +30,8 @@ export const createDataSource = (widgetData) => {
       return Fliplet.DataSources.create({
         name: dataSourceName,
         appId: widgetData.appId,
-        entries: widgetData.defaults.entries.entries,
-        columns: widgetData.defaults.entries.columns
+        entries: widgetData.default.entries,
+        columns: widgetData.default.columns
       });
     });
 };

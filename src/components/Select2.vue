@@ -15,11 +15,8 @@ export default {
         return [];
       }
     },
-    selectedDataSource: {
-      type: Object,
-      default() {
-        return {};
-      }
+    selectedDataSourceId: {
+      type: Number
     }
   },
   methods: {
@@ -82,6 +79,10 @@ export default {
 
       $select2Ref.on('select2:select', function(e) {
         $vm.$emit('selectDataSource', e.params.data);
+        Fliplet.Widget.emit('showColumns', {
+          columns: e.params.data.columns,
+          id: e.params.data.id
+        });
       });
 
       $select2Ref.on('select2:open', function() {
@@ -136,8 +137,10 @@ export default {
 
       return 0;
     },
-    formatItem: function(...{id, text, name}) {
-      if (['none', 'currentAppDataSources', 'otherDataSources'].includes(id)) {
+    formatItem: function(state) {
+      const {id, name, text} = state;
+
+      if (['none', 'currentAppDataSources', 'otherDataSources', ''].includes(id)) {
         return $(
           `<span class="select2-value-holder"> ${ text } </span>`
         );
@@ -158,9 +161,7 @@ export default {
   mounted: function() {
     this.initSelect2();
     this.initHandlers();
-    this.setSelectedValue(this.selectedDataSource);
-  },
-  updated: function() {
+    this.setSelectedValue(this.selectedDataSourceId);
   }
 };
 </script>

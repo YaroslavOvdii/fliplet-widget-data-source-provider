@@ -1,8 +1,11 @@
 <template>
   <section class="data-source-selector">
     <div v-if="dataSources.length && !selectedDataSource">
-      <Select2 :dataSources="dataSources" :selectedDataSource="selectedDataSource" @selectDataSource="setDataSource"></Select2>
-      <span @click="showAllDataSources" class="btn-link create-dataSource">Create new data source</span>
+      <Select2 :dataSources="dataSources"
+        :selectedDataSourceId="selectedDataSource && selectedDataSource.id"
+        @selectDataSource="setDataSource">
+        </Select2>
+      <span @click="() => { this.$emit('onDataSourceCreate') }" class="btn-link create-dataSource">Create new data source</span>
       <div class="checkbox checkbox-icon">
         <input @change="showAllDataSources" :checked="showAll" type="checkbox" name="showAll" id="showAll" />
         <label for="showAll">
@@ -18,7 +21,10 @@
       <div @click="viewDataSource" class="btn btn-default view-ds-btn">View data source</div>
     </div>
     <div v-else-if="dataSources.length && selectedDataSource && changeDataSource">
-      <Select2 :dataSources="dataSources" :selectedDataSource="selectedDataSource" @selectDataSource="setDataSource"></Select2>
+      <Select2 :dataSources="dataSources"
+        :selectedDataSourceId="selectedDataSource && selectedDataSource.id"
+        @selectDataSource="setDataSource">
+      </Select2>
       <span @click="() => { this.$emit('onDataSourceCreate') }" class="btn-link create-dataSource">Create new data source</span>
       <div class="checkbox checkbox-icon">
         <input @change="showAllDataSources" :checked="showAll" type="checkbox" name="showAll" id="showAll" />

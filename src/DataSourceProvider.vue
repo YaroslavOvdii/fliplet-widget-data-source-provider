@@ -13,7 +13,7 @@
         :changeDataSource="changeDataSource"
         :showAll="showAll"
         @selectedDataSource="(dataSource) => { selectedDataSource = dataSource }"
-        @onDataSourceCreate="createDS"
+        @onDataSourceCreate="onDataSourceCreate "
         @onShowAll="(event) => { showAllDataSources(event) }"
         @onDataSourceChange="changeDataSource = !changeDataSource"
       >
@@ -105,7 +105,9 @@ export default {
       getDataSources(appId)
         .then(dataSources => {
           if (this.widgetData.dataSourceId) {
-            this.selectedDataSource = dataSources.find(dataSource => dataSource.id === this.widgetData.dataSourceId);
+            this.selectedDataSource = dataSources.find(dataSource => {
+              return dataSource.id === parseInt(this.widgetData.dataSourceId, 10);
+            });
 
             if (!this.selectedDataSource) {
               return getDataSource(this.widgetData.dataSourceId)
@@ -123,6 +125,15 @@ export default {
           return dataSources;
         })
         .then(dataSources => {
+          if (this.selectedDataSource) {
+            Fliplet.Widget.emit('showColumns',
+              {
+                columns: this.selectedDataSource.columns,
+                id: this.selectedDataSource.id
+              }
+            );
+          }
+
           if (appId) {
             this.appDataSources = dataSources;
           } else {
@@ -143,7 +154,7 @@ export default {
 
       this.loadDataSources(this.widgetData.appId);
     },
-    createDS: function() {
+    onDataSourceCreate: function() {
       this.isLoading = true;
 
       createDataSource(this.widgetData)
@@ -153,6 +164,12 @@ export default {
           }
 
           this.selectedDataSource = dataSource;
+
+          if (this.allDataSources.length) {
+            this.allDataSources[0].children.push(dataSource);
+          }
+
+          this.appDataSources.push(dataSource);
         })
         .catch(err => {
           this.hasError = true;
