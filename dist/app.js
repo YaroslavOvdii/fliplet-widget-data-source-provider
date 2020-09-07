@@ -107,7 +107,7 @@ new Vue({
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _DataSourceProvider_vue_vue_type_template_id_4de52e2f___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
 /* harmony import */ var _DataSourceProvider_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
-/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(23);
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
 
 
 
@@ -233,8 +233,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _components_DataSourceSelector__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(12);
-/* harmony import */ var _components_SecurityNotifier__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
-/* harmony import */ var _services_dataSource__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(29);
+/* harmony import */ var _components_SecurityNotifier__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(23);
+/* harmony import */ var _services_dataSource__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(28);
 
 //
 //
@@ -395,7 +395,7 @@ __webpack_require__.r(__webpack_exports__);
         _this4.selectedDataSource = dataSource;
 
         if (_this4.allDataSources.length) {
-          _this4.allDataSources[0].children.push(dataSource);
+          _this4.allDataSources[0].options.push(dataSource);
         }
 
         _this4.appDataSources.push(dataSource);
@@ -518,7 +518,7 @@ module.exports = _nonIterableSpread;
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _DataSourceSelector_vue_vue_type_template_id_75642f94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(13);
 /* harmony import */ var _DataSourceSelector_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
-/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(23);
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
 
 
 
@@ -576,8 +576,12 @@ var render = function() {
             _c("Select2", {
               attrs: {
                 dataSources: _vm.dataSources,
-                selectedDataSourceId:
-                  _vm.selectedDataSource && _vm.selectedDataSource.id
+                selectedDataSource: _vm.selectedDataSource,
+                customOptionView: _vm.formatDataSourceOption,
+                customSearch: _vm.customDataSourceSearch,
+                optionLabelKey: "name",
+                optionValueKey: "id",
+                selectWithGroups: !!_vm.otherDataSources.length
               },
               on: { selectDataSource: _vm.setDataSource }
             }),
@@ -648,8 +652,12 @@ var render = function() {
             _c("Select2", {
               attrs: {
                 dataSources: _vm.dataSources,
-                selectedDataSourceId:
-                  _vm.selectedDataSource && _vm.selectedDataSource.id
+                selectedDataSource: _vm.selectedDataSource,
+                customOptionView: _vm.formatDataSourceOption,
+                customSearch: _vm.customDataSourceSearch,
+                optionLabelKey: "name",
+                optionValueKey: "id",
+                selectWithGroups: !!_vm.otherDataSources.length
               },
               on: { selectDataSource: _vm.setDataSource }
             }),
@@ -734,7 +742,22 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _Select2__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _Select2__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(17);
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -820,36 +843,99 @@ __webpack_require__.r(__webpack_exports__);
     prepareData: function prepareData() {
       // If otherDataSources array is empty it means that we show user only ds's for current app
       if (!this.otherDataSources.length) {
-        return this.currentAppDataSources;
+        return this.sortDataSourceEntries(this.currentAppDataSources);
       }
 
       var groupedDataSources = [{
-        id: 'currentAppDataSources',
-        text: 'This app',
-        name: 'currentApp',
-        children: []
+        name: 'This app',
+        options: []
       }, {
-        id: 'otherDataSources',
-        text: 'Other apps',
-        name: 'otherApp',
-        children: []
+        name: 'Other apps',
+        options: []
       }];
-      groupedDataSources[0].children = this.currentAppDataSources;
-      groupedDataSources[1].children = this.filterOtherAppsArray(this.otherDataSources);
+      groupedDataSources[0].options = this.sortDataSourceEntries(this.currentAppDataSources);
+      groupedDataSources[1].options = this.sortDataSourceEntries(this.filterOtherAppsArray(this.otherDataSources));
       return groupedDataSources;
     },
-    filterOtherAppsArray: function filterOtherAppsArray(filterDS) {
+    filterOtherAppsArray: function filterOtherAppsArray(dataSources) {
       var _this = this;
 
-      return filterDS.filter(function (ds) {
+      return dataSources.filter(function (dataSource) {
         return _this.currentAppDataSources.findIndex(function (currDS) {
-          return currDS.id === ds.id;
+          return currDS.id === dataSource.id;
         }) === -1;
       });
     },
+    formatDataSourceOption: function formatDataSourceOption(data) {
+      var id = data.id,
+          name = data.name,
+          text = data.text;
+      return "".concat(name || text, " ID: ").concat(id);
+    },
+    customDataSourceSearch: function customDataSourceSearch(condition, data) {
+      // Return of this function should be the same as the array.filter function
+      // If there are no search terms, return all of the data
+      if (!condition) {
+        return true;
+      }
+
+      var term = condition.toUpperCase();
+      var name = data.name.toUpperCase();
+      var id = data.id.toString(); // Search both by name and id
+
+      if (name.indexOf(term) > -1 || id.indexOf(term) > -1) {
+        return true;
+      } // Return `false` if the term should not be displayed
+
+
+      return false;
+    },
     setDataSource: function setDataSource(dataSource) {
-      this.selectedDataSource = dataSource;
-      this.$emit('selectedDataSource', dataSource);
+      if (dataSource) {
+        this.selectedDataSource = dataSource;
+        Fliplet.Widget.emit('showColumns', {
+          columns: dataSource.columns,
+          id: dataSource.id
+        });
+        this.$emit('selectedDataSource', dataSource);
+      }
+    },
+    sortDataSourceEntries: function sortDataSourceEntries(dataSources) {
+      var copyDataSources = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default()(dataSources);
+
+      if (copyDataSources[0].options) {
+        copyDataSources[0].options.sort(this.sortArray);
+        copyDataSources[1].options.sort(this.sortArray);
+      } else {
+        copyDataSources.sort(this.sortArray);
+      }
+
+      return copyDataSources;
+    },
+    sortArray: function sortArray(a, b) {
+      // Sort data source array by name
+      // Send names that starts with number to the end of the list
+      var startsWithAlphabet = /^[A-Z,a-z]/;
+      var aValue = a.name ? a.name.toUpperCase() : '}';
+      var bValue = b.name ? b.name.toUpperCase() : '}';
+
+      if (!startsWithAlphabet.test(bValue)) {
+        bValue = "{".concat(bValue);
+      }
+
+      if (!startsWithAlphabet.test(aValue)) {
+        aValue = "{".concat(aValue);
+      }
+
+      if (aValue < bValue) {
+        return -1;
+      }
+
+      if (aValue > bValue) {
+        return 1;
+      }
+
+      return 0;
     },
     viewDataSource: function viewDataSource() {
       Fliplet.Studio.emit('overlay', {
@@ -868,7 +954,7 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   components: {
-    Select2: _Select2__WEBPACK_IMPORTED_MODULE_0__["default"]
+    Select2: _Select2__WEBPACK_IMPORTED_MODULE_1__["default"]
   },
   mounted: function mounted() {
     this.dataSources = this.prepareData();
@@ -886,7 +972,7 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Select2_vue_vue_type_template_id_bfa75c94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(18);
 /* harmony import */ var _Select2_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(20);
-/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(23);
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
 
 
 
@@ -937,18 +1023,131 @@ var render = function() {
   var _c = _vm._self._c || _h
   return _c("section", [
     _c(
-      "select",
+      "div",
       {
-        ref: "dataSourceSelect",
-        staticClass: "hidden-select form-control",
-        attrs: { name: "selectDatasource", "data-label": "select" }
+        ref: "select",
+        staticClass: "select",
+        on: {
+          click: function() {
+            _vm.toggleSelect()
+          }
+        }
       },
       [
-        _c("option", { attrs: { value: "none", disable: "" } }, [
-          _vm._v("-- Select data source")
+        _c("span", { staticClass: "select-holder" }, [
+          _vm._v(_vm._s(_vm.selectedOption || "-- Select data source"))
         ])
       ]
-    )
+    ),
+    _vm._v(" "),
+    _c("div", { staticClass: "options" }, [
+      _c("div", { staticClass: "search" }, [
+        _c("input", {
+          directives: [
+            {
+              name: "model",
+              rawName: "v-model.trim",
+              value: _vm.searchValue,
+              expression: "searchValue",
+              modifiers: { trim: true }
+            }
+          ],
+          attrs: { type: "text" },
+          domProps: { value: _vm.searchValue },
+          on: {
+            input: [
+              function($event) {
+                if ($event.target.composing) {
+                  return
+                }
+                _vm.searchValue = $event.target.value.trim()
+              },
+              _vm.search
+            ],
+            blur: function($event) {
+              return _vm.$forceUpdate()
+            }
+          }
+        })
+      ]),
+      _vm._v(" "),
+      !_vm.selectOptions.length && !_vm.searchValue
+        ? _c("div", { staticClass: "info" }, [
+            _vm._v("\n      Loading...\n    ")
+          ])
+        : !_vm.selectOptions.length && _vm.searchValue
+        ? _c("div", { staticClass: "info" }, [
+            _vm._v("\n      No results found.\n    ")
+          ])
+        : _vm.selectOptions.length
+        ? _c(
+            "div",
+            [
+              _vm.selectWithGroups
+                ? _c(
+                    "div",
+                    _vm._l(_vm.selectOptions, function(group) {
+                      return _c(
+                        "div",
+                        { key: group.name, staticClass: "option-group" },
+                        [
+                          _c("span", { staticClass: "option-group-name" }, [
+                            _vm._v(_vm._s(group.name))
+                          ]),
+                          _vm._v(" "),
+                          _vm._l(group.options, function(option) {
+                            return _c(
+                              "div",
+                              {
+                                key: option.id,
+                                staticClass: "option",
+                                on: {
+                                  click: function() {
+                                    _vm.setOption(option)
+                                  }
+                                }
+                              },
+                              [
+                                _vm._v(
+                                  "\n            " +
+                                    _vm._s(_vm.optionView(option)) +
+                                    "\n          "
+                                )
+                              ]
+                            )
+                          })
+                        ],
+                        2
+                      )
+                    }),
+                    0
+                  )
+                : _vm._l(_vm.selectOptions, function(option) {
+                    return _c(
+                      "div",
+                      {
+                        key: option.id,
+                        staticClass: "option",
+                        on: {
+                          click: function() {
+                            _vm.setOption(option)
+                          }
+                        }
+                      },
+                      [
+                        _vm._v(
+                          "\n        " +
+                            _vm._s(_vm.optionView(option)) +
+                            "\n      "
+                        )
+                      ]
+                    )
+                  })
+            ],
+            2
+          )
+        : _vm._e()
+    ])
   ])
 }
 var staticRenderFns = []
@@ -973,15 +1172,32 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(22);
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__);
 
-
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1___default()(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -998,172 +1214,108 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
         return [];
       }
     },
-    selectedDataSourceId: {
+    customSearch: {
+      type: Function,
+      "default": null
+    },
+    customOptionView: {
+      type: Function,
+      "default": null
+    },
+    selectedDataSource: {
       type: Number
+    },
+    optionValueKey: {
+      type: String,
+      "default": ''
+    },
+    optionLabelKey: {
+      type: String,
+      "default": ''
+    },
+    selectWithGroups: {
+      type: Boolean,
+      "default": false
     }
   },
+  data: function data() {
+    return {
+      selectedOption: '',
+      selectOptions: [],
+      allOptions: [],
+      searchValue: ''
+    };
+  },
   methods: {
-    customDataSourceSearch: function customDataSourceSearch(params, data) {
-      // If there are no search terms, return all of the data
-      if (!params.term) {
-        return data;
-      } // Do not display the item if there is no 'text' property
-
-
-      if (typeof data.text === 'undefined' || typeof data.name === 'undefined' || typeof data.id === 'undefined') {
-        return null;
-      }
-
-      var term = params.term.toLowerCase(); // Search when we get DataSources for all aps
-
-      if (data.children) {
-        var matchedChildren = data.children.filter(function (child) {
-          var name = child.name.toLowerCase();
-          var id = child.id.toString();
-
-          if (name.indexOf(term) > -1 || id.indexOf(term) > -1) {
-            return true;
-          }
-        });
-
-        if (matchedChildren.length) {
-          var modifiedData = _objectSpread({}, data);
-
-          modifiedData.children = matchedChildren;
-          return modifiedData;
-        }
-      } // Search both by name and id
-
-
-      if (data.name.indexOf(term) > -1 || data.id.indexOf(term) > -1) {
-        return data;
-      } // Return `null` if the term should not be displayed
-
-
-      return null;
-    },
-    initSelect2: function initSelect2() {
-      $(this.$refs.dataSourceSelect).select2({
-        data: this.sortDataSourceEntries(this.dataSources),
-        placeholder: '-- Select a data source',
-        templateResult: this.formatItem,
-        templateSelection: this.formatItem,
-        width: '100%',
-        matcher: this.customDataSourceSearch,
-        dropdownAutoWidth: false
-      });
-    },
-    initHandlers: function initHandlers() {
-      var $vm = this;
-      var $select2Ref = $(this.$refs.dataSourceSelect);
-      var $dataSourceSelector = $('.data-source-selector');
-      $select2Ref.on('select2:select', function (e) {
-        $vm.$emit('selectDataSource', e.params.data);
-        Fliplet.Widget.emit('showColumns', {
-          columns: e.params.data.columns,
-          id: e.params.data.id
-        });
-      });
-      $select2Ref.on('select2:open', function () {
-        $dataSourceSelector.css('paddingBottom', '110px');
+    toggleSelect: function toggleSelect(init) {
+      if (!init) {
+        this.$refs.select.classList.toggle('active');
         Fliplet.Widget.autosize();
-        setTimeout(function () {
-          $dataSourceSelector.css('paddingBottom', '45px');
-        }, 50);
-      });
-      $select2Ref.on('select2:close', function () {
-        setTimeout(function () {
-          $dataSourceSelector.css('paddingBottom', '0');
-          Fliplet.Widget.autosize();
-        }, 100);
-      });
+      }
     },
-    sortDataSourceEntries: function sortDataSourceEntries(dataSources) {
-      var copyDataSources = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default()(dataSources);
-
-      if (copyDataSources[0].children) {
-        copyDataSources[0].children.sort(this.sortArray);
-        copyDataSources[1].children.sort(this.sortArray);
-      } else {
-        copyDataSources.sort(this.sortArray);
-      }
-
-      return copyDataSources;
+    setOption: function setOption(value, init) {
+      this.selectedOption = this.getSelectedOptionLabel(value);
+      this.$emit('selectDataSource', value);
+      this.toggleSelect(init);
     },
-    sortArray: function sortArray(a, b) {
-      // Sort data source array by name
-      // Send names that starts with number to the end of the list
-      var startsWithAlphabet = /^[A-Z,a-z]/;
-      var aValue = a.name ? a.name.toUpperCase() : '}';
-      var bValue = b.name ? b.name.toUpperCase() : '}';
-
-      if (!startsWithAlphabet.test(bValue)) {
-        bValue = "{".concat(bValue);
+    getSelectedOptionValue: function getSelectedOptionValue(value) {
+      if (!this.optionValueKey) {
+        return value;
       }
 
-      if (!startsWithAlphabet.test(aValue)) {
-        aValue = "{".concat(aValue);
-      }
-
-      if (aValue < bValue) {
-        return -1;
-      }
-
-      if (aValue > bValue) {
-        return 1;
-      }
-
-      return 0;
+      return value && value[this.optionValueKey];
     },
-    formatItem: function formatItem(state) {
-      var id = state.id,
-          name = state.name,
-          text = state.text;
-
-      if (['none', 'currentAppDataSources', 'otherDataSources', ''].includes(id)) {
-        return $("<span class=\"select2-value-holder\"> ".concat(text, " </span>"));
+    getSelectedOptionLabel: function getSelectedOptionLabel(value) {
+      if (!this.optionLabelKey) {
+        return value;
       }
 
-      return $("<span class=\"select2-value-holder\"> ".concat(name || text, " <small>ID: ").concat(id, " </small></span>"));
+      return value && value[this.optionLabelKey];
     },
-    setSelectedValue: function setSelectedValue(value) {
-      if (!value) {
+    search: function search() {
+      var _this = this;
+
+      if (this.customSearch) {
+        this.selectOptions = this.allOptions.filter(function (option) {
+          return _this.customSearch(_this.searchValue, option);
+        });
         return;
       }
 
-      $(this.$refs.dataSourceSelect).val(value).trigger('change');
+      this.defaultSearch(this.searchValue);
+    },
+    optionView: function optionView(data) {
+      if (this.customOptionView) {
+        return this.customOptionView(data);
+      }
+
+      return data;
+    },
+    defaultSearch: function defaultSearch(value) {
+      this.selectOptions = [];
+
+      if (!value) {
+        this.selectOptions = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default()(this.allOptions);
+        return;
+      }
+
+      this.selectOptions = this.allOptions.filter(function (option) {
+        return option.indexOf(value) !== -1;
+      });
+    },
+    initSelect2: function initSelect2() {
+      this.allOptions = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default()(this.dataSources);
+      this.search();
+      this.setOption(this.selectedDataSource, true);
     }
   },
   mounted: function mounted() {
     this.initSelect2();
-    this.initHandlers();
-    this.setSelectedValue(this.selectedDataSourceId);
   }
 });
 
 /***/ }),
 /* 22 */
-/***/ (function(module, exports) {
-
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-module.exports = _defineProperty;
-
-/***/ }),
-/* 23 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1270,14 +1422,14 @@ function normalizeComponent (
 
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(25);
-/* harmony import */ var _SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
-/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(23);
+/* harmony import */ var _SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(24);
+/* harmony import */ var _SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(26);
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
 
 
 
@@ -1302,12 +1454,12 @@ component.options.__file = "src/components/SecurityNotifier.vue"
 /* harmony default export */ __webpack_exports__["default"] = (component.exports);
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(26);
+/* harmony import */ var _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(25);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "render", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__["render"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_template_id_eac12b94___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"]; });
@@ -1315,7 +1467,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /***/ }),
-/* 26 */
+/* 25 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1373,16 +1525,16 @@ render._withStripped = true
 
 
 /***/ }),
-/* 27 */
+/* 26 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _node_modules_babel_loader_lib_index_js_ref_3_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(28);
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_ref_3_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(27);
 /* empty/unused harmony star reexport */ /* harmony default export */ __webpack_exports__["default"] = (_node_modules_babel_loader_lib_index_js_ref_3_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SecurityNotifier_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__["default"]); 
 
 /***/ }),
-/* 28 */
+/* 27 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1410,7 +1562,7 @@ __webpack_require__.r(__webpack_exports__);
 });
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";

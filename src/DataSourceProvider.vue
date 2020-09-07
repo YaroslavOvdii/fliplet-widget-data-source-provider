@@ -166,7 +166,7 @@ export default {
           this.selectedDataSource = dataSource;
 
           if (this.allDataSources.length) {
-            this.allDataSources[0].children.push(dataSource);
+            this.allDataSources[0].options.push(dataSource);
           }
 
           this.appDataSources.push(dataSource);

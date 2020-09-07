@@ -1,8 +1,14 @@
 <template>
   <section class="data-source-selector">
     <div v-if="dataSources.length && !selectedDataSource">
-      <Select2 :dataSources="dataSources"
-        :selectedDataSourceId="selectedDataSource && selectedDataSource.id"
+      <Select2
+        :dataSources="dataSources"
+        :selectedDataSource="selectedDataSource"
+        :customOptionView="formatDataSourceOption"
+        :customSearch="customDataSourceSearch"
+        :optionLabelKey="'name'"
+        :optionValueKey="'id'"
+        :selectWithGroups="!!otherDataSources.length"
         @selectDataSource="setDataSource">
         </Select2>
       <span @click="() => { this.$emit('onDataSourceCreate') }" class="btn-link create-dataSource">Create new data source</span>
@@ -21,8 +27,14 @@
       <div @click="viewDataSource" class="btn btn-default view-ds-btn">View data source</div>
     </div>
     <div v-else-if="dataSources.length && selectedDataSource && changeDataSource">
-      <Select2 :dataSources="dataSources"
-        :selectedDataSourceId="selectedDataSource && selectedDataSource.id"
+      <Select2
+        :dataSources="dataSources"
+        :selectedDataSource="selectedDataSource"
+        :customOptionView="formatDataSourceOption"
+        :customSearch="customDataSourceSearch"
+        :optionLabelKey="'name'"
+        :optionValueKey="'id'"
+        :selectWithGroups="!!otherDataSources.length"
         @selectDataSource="setDataSource">
       </Select2>
       <span @click="() => { this.$emit('onDataSourceCreate') }" class="btn-link create-dataSource">Create new data source</span>
@@ -85,38 +97,101 @@ export default {
     prepareData: function() {
       // If otherDataSources array is empty it means that we show user only ds's for current app
       if (!this.otherDataSources.length) {
-        return this.currentAppDataSources;
+        return this.sortDataSourceEntries(this.currentAppDataSources);
       }
 
       const groupedDataSources = [
         {
-          id: 'currentAppDataSources',
-          text: 'This app',
-          name: 'currentApp',
-          children: []
+          name: 'This app',
+          options: []
         },
         {
-          id: 'otherDataSources',
-          text: 'Other apps',
-          name: 'otherApp',
-          children: []
+          name: 'Other apps',
+          options: []
         }
       ];
 
-      groupedDataSources[0].children = this.currentAppDataSources;
-      groupedDataSources[1].children = this.filterOtherAppsArray(this.otherDataSources);
+      groupedDataSources[0].options = this.sortDataSourceEntries(this.currentAppDataSources);
+      groupedDataSources[1].options = this.sortDataSourceEntries(this.filterOtherAppsArray(this.otherDataSources));
 
       return groupedDataSources;
     },
-    filterOtherAppsArray: function(filterDS) {
-      return filterDS.filter(ds => {
-        return this.currentAppDataSources.findIndex(currDS => currDS.id === ds.id) === -1;
+    filterOtherAppsArray: function(dataSources) {
+      return dataSources.filter(dataSource => {
+        return this.currentAppDataSources.findIndex(currDS => currDS.id === dataSource.id) === -1;
       });
     },
-    setDataSource: function(dataSource) {
-      this.selectedDataSource = dataSource;
+    formatDataSourceOption: function(data) {
+      const { id, name, text } = data;
 
-      this.$emit('selectedDataSource', dataSource);
+      return `${name || text} ID: ${id}`;
+    },
+    customDataSourceSearch: function(condition, data) {
+      // Return of this function should be the same as the array.filter function
+      // If there are no search terms, return all of the data
+      if (!condition) {
+        return true;
+      }
+
+      const term = condition.toUpperCase();
+      const name = data.name.toUpperCase();
+      const id = data.id.toString();
+
+      // Search both by name and id
+      if (name.indexOf(term) > -1 || id.indexOf(term) > -1) {
+        return true;
+      }
+
+      // Return `false` if the term should not be displayed
+      return false;
+    },
+    setDataSource: function(dataSource) {
+      if (dataSource) {
+        this.selectedDataSource = dataSource;
+
+        Fliplet.Widget.emit('showColumns', {
+          columns: dataSource.columns,
+          id: dataSource.id
+        });
+
+        this.$emit('selectedDataSource', dataSource);
+      }
+    },
+    sortDataSourceEntries: function(dataSources) {
+      const copyDataSources = [...dataSources];
+
+      if (copyDataSources[0].options) {
+        copyDataSources[0].options.sort(this.sortArray);
+        copyDataSources[1].options.sort(this.sortArray);
+      } else {
+        copyDataSources.sort(this.sortArray);
+      }
+
+      return copyDataSources;
+    },
+    sortArray: function(a, b) {
+      // Sort data source array by name
+      // Send names that starts with number to the end of the list
+      const startsWithAlphabet = /^[A-Z,a-z]/;
+      let aValue = a.name ? a.name.toUpperCase() : '}';
+      let bValue = b.name ? b.name.toUpperCase() : '}';
+
+      if (!startsWithAlphabet.test(bValue)) {
+        bValue = `{${bValue}`;
+      }
+
+      if (!startsWithAlphabet.test(aValue)) {
+        aValue = `{${aValue}`;
+      }
+
+      if (aValue < bValue) {
+        return -1;
+      }
+      if (aValue > bValue) {
+        return 1;
+      }
+
+      return 0;
     },
     viewDataSource: function() {
       Fliplet.Studio.emit('overlay', {

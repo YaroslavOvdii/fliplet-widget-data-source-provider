@@ -1,8 +1,33 @@
 <template>
   <section>
-    <select name="selectDatasource" ref="dataSourceSelect" data-label="select" class="hidden-select form-control">
-      <option value="none" disable>-- Select data source</option>
-    </select>
+    <div ref="select" class="select" @click="() => { toggleSelect() }">
+      <span class="select-holder">{{ selectedOption || '-- Select data source' }}</span>
+    </div>
+    <div class="options">
+      <div class="search">
+        <input @input="search" type="text" v-model.trim="searchValue"/>
+      </div>
+      <div v-if="!selectOptions.length && !searchValue" class="info">
+        Loading...
+      </div>
+      <div v-else-if="!selectOptions.length && searchValue" class="info">
+        No results found.
+      </div>
+      <div v-else-if="selectOptions.length">
+        <div v-if="selectWithGroups">
+          <div v-for="group in selectOptions" :key="group.name" class="option-group">
+          <span class="option-group-name">{{ group.name }}</span>
+            <div v-for="option in group.options" @click="() => { setOption(option) }" :key="option.id" class="option">
+              {{ optionView(option) }}
+            </div>
+          </div>
+        </div>
+        <div v-else v-for="option in selectOptions" @click="() => { setOption(option) }" :key="option.id" class="option">
+          {{ optionView(option) }}
+        </div>
+      </div>
+
+    </div>
   </section>
 </template>
 
@@ -15,153 +40,103 @@ export default {
         return [];
       }
     },
-    selectedDataSourceId: {
+    customSearch: {
+      type: Function,
+      default: null
+    },
+    customOptionView: {
+      type: Function,
+      default: null
+    },
+    selectedDataSource: {
       type: Number
+    },
+    optionValueKey: {
+      type: String,
+      default: ''
+    },
+    optionLabelKey: {
+      type: String,
+      default: ''
+    },
+    selectWithGroups: {
+      type: Boolean,
+      default: false
     }
   },
+  data() {
+    return {
+      selectedOption: '',
+      selectOptions: [],
+      allOptions: [],
+      searchValue: ''
+    };
+  },
   methods: {
-    customDataSourceSearch: function(params, data) {
-      // If there are no search terms, return all of the data
-      if (!params.term) {
-        return data;
-      }
+    toggleSelect: function(init) {
+      if (!init) {
+        this.$refs.select.classList.toggle('active');
 
-      // Do not display the item if there is no 'text' property
-      if (typeof data.text === 'undefined' || typeof data.name === 'undefined' || typeof data.id === 'undefined') {
-        return null;
-      }
-
-      const term = params.term.toLowerCase();
-
-      // Search when we get DataSources for all aps
-      if (data.children) {
-        const matchedChildren = data.children.filter(function(child) {
-          const name = child.name.toLowerCase();
-          const id = child.id.toString();
-
-          if (name.indexOf(term) > -1 || id.indexOf(term) > -1) {
-            return true;
-          }
-        });
-
-        if (matchedChildren.length) {
-          const modifiedData = {...data};
-
-          modifiedData.children = matchedChildren;
-
-          return modifiedData;
-        }
-      }
-
-      // Search both by name and id
-      if (data.name.indexOf(term) > -1 || data.id.indexOf(term) > -1) {
-        return data;
-      }
-
-      // Return `null` if the term should not be displayed
-      return null;
-    },
-    initSelect2: function() {
-      $(this.$refs.dataSourceSelect).select2({
-        data: this.sortDataSourceEntries(this.dataSources),
-        placeholder: '-- Select a data source',
-        templateResult: this.formatItem,
-        templateSelection: this.formatItem,
-        width: '100%',
-        matcher: this.customDataSourceSearch,
-        dropdownAutoWidth: false
-      });
-    },
-    initHandlers: function() {
-      const $vm = this;
-      const $select2Ref = $(this.$refs.dataSourceSelect);
-      const $dataSourceSelector = $('.data-source-selector');
-
-      $select2Ref.on('select2:select', function(e) {
-        $vm.$emit('selectDataSource', e.params.data);
-        Fliplet.Widget.emit('showColumns', {
-          columns: e.params.data.columns,
-          id: e.params.data.id
-        });
-      });
-
-      $select2Ref.on('select2:open', function() {
-        $dataSourceSelector.css('paddingBottom', '110px');
         Fliplet.Widget.autosize();
-
-        setTimeout(() => {
-          $dataSourceSelector.css('paddingBottom', '45px');
-        }, 50);
-      });
-
-      $select2Ref.on('select2:close', function() {
-        setTimeout(() => {
-          $dataSourceSelector.css('paddingBottom', '0');
-          Fliplet.Widget.autosize();
-        }, 100);
-      });
+      }
     },
-    sortDataSourceEntries: function(dataSources) {
-      const copyDataSources = [...dataSources];
-
-      if (copyDataSources[0].children) {
-        copyDataSources[0].children.sort(this.sortArray);
-        copyDataSources[1].children.sort(this.sortArray);
-      } else {
-        copyDataSources.sort(this.sortArray);
-      }
-
-      return copyDataSources;
+    setOption: function(value, init) {
+      this.selectedOption = this.getSelectedOptionLabel(value);
+      this.$emit('selectDataSource', value);
+      this.toggleSelect(init);
     },
-    sortArray: function(a, b) {
-      // Sort data source array by name
-      // Send names that starts with number to the end of the list
-      const startsWithAlphabet = /^[A-Z,a-z]/;
-      let aValue = a.name ? a.name.toUpperCase() : '}';
-      let bValue = b.name ? b.name.toUpperCase() : '}';
-
-      if (!startsWithAlphabet.test(bValue)) {
-        bValue = `{${bValue}`;
+    getSelectedOptionValue: function(value) {
+      if (!this.optionValueKey) {
+        return value;
       }
 
-      if (!startsWithAlphabet.test(aValue)) {
-        aValue = `{${aValue}`;
-      }
-
-      if (aValue < bValue) {
-        return -1;
-      }
-      if (aValue > bValue) {
-        return 1;
-      }
-
-      return 0;
+      return value && value[this.optionValueKey];
     },
-    formatItem: function(state) {
-      const {id, name, text} = state;
-
-      if (['none', 'currentAppDataSources', 'otherDataSources', ''].includes(id)) {
-        return $(
-          `<span class="select2-value-holder"> ${ text } </span>`
-        );
+    getSelectedOptionLabel: function(value) {
+      if (!this.optionLabelKey) {
+        return value;
       }
 
-      return $(
-        `<span class="select2-value-holder"> ${ name || text } <small>ID: ${ id } </small></span>`
-      );
+      return value && value[this.optionLabelKey];
     },
-    setSelectedValue: function(value) {
-      if (!value) {
+    search: function() {
+      if (this.customSearch) {
+        this.selectOptions = this.allOptions.filter(option => {
+          return this.customSearch(this.searchValue, option);
+        });
+
         return;
       }
 
-      $(this.$refs.dataSourceSelect).val(value).trigger('change');
+      this.defaultSearch(this.searchValue);
+    },
+    optionView: function(data) {
+      if (this.customOptionView) {
+        return this.customOptionView(data);
+      }
+
+      return data;
+    },
+    defaultSearch: function(value) {
+      this.selectOptions = [];
+
+      if (!value) {
+        this.selectOptions = [...this.allOptions];
+        return;
+      }
+
+      this.selectOptions = this.allOptions.filter((option) => {
+        return option.indexOf(value) !== -1;
+      });
+    },
+    initSelect2: function() {
+      this.allOptions = [...this.dataSources];
+      this.search();
+      this.setOption(this.selectedDataSource, true);
     }
   },
   mounted: function() {
     this.initSelect2();
-    this.initHandlers();
-    this.setSelectedValue(this.selectedDataSourceId);
   }
 };
 </script>
