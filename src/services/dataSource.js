@@ -1,5 +1,5 @@
 export const getDataSources = (appId) => {
-  const getOptions = appId ? {appId: appId} : {};
+  const getOptions = appId ? { appId } : {};
 
   return Fliplet.DataSources.get(getOptions);
 };
@@ -15,15 +15,15 @@ export const createDataSource = (widgetData) => {
   })
     .then(dataSourceName => {
       if (dataSourceName === null) {
-        return false;
+        return;
       }
 
       if (!dataSourceName) {
-        Fliplet.Modal.alert({
+        return Fliplet.Modal.alert({
           message: 'Data source name can\'t be empty. Plaese enter data source name again.'
         })
           .then(() => {
-            createDataSource();
+            createDataSource(widgetData);
           });
       }
 

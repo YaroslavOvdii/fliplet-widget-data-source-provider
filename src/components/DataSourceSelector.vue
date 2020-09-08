@@ -11,7 +11,7 @@
         :selectWithGroups="!!otherDataSources.length"
         @selectDataSource="setDataSource">
         </Select2>
-      <span @click="() => { this.$emit('onDataSourceCreate') }" class="btn-link create-dataSource">Create new data source</span>
+      <span @click="onDataSourceCreate" class="btn-link create-data-source">Create new data source</span>
       <div class="checkbox checkbox-icon">
         <input @change="showAllDataSources" :checked="showAll" type="checkbox" name="showAll" id="showAll" />
         <label for="showAll">
@@ -23,8 +23,8 @@
       </div>
     </div>
     <div v-else-if="dataSources.length && selectedDataSource && !changeDataSource">
-      <p>{{ selectedDataSource.id }}. {{ selectedDataSource.name }} <span @click="() => { this.$emit('onDataSourceChange') }" class="btn-link change-dataSource">Change</span></p>
-      <div @click="viewDataSource" class="btn btn-default view-ds-btn">View data source</div>
+      <p>{{ selectedDataSource.id }}. {{ selectedDataSource.name }} <span @click="onDataSourceChange" class="btn-link change-data-source">Change</span></p>
+      <div @click="viewDataSource" class="btn btn-default btn-view-data-source">View data source</div>
     </div>
     <div v-else-if="dataSources.length && selectedDataSource && changeDataSource">
       <Select2
@@ -37,7 +37,7 @@
         :selectWithGroups="!!otherDataSources.length"
         @selectDataSource="setDataSource">
       </Select2>
-      <span @click="() => { this.$emit('onDataSourceCreate') }" class="btn-link create-dataSource">Create new data source</span>
+      <span @click="onDataSourceCreate" class="btn-link create-data-source">Create new data source</span>
       <div class="checkbox checkbox-icon">
         <input @change="showAllDataSources" :checked="showAll" type="checkbox" name="showAll" id="showAll" />
         <label for="showAll">
@@ -47,7 +47,7 @@
           Show all data sources
         </label>
       </div>
-      <div @click="viewDataSource" class="btn btn-default view-ds-btn">View data source</div>
+      <div @click="viewDataSource" class="btn btn-default btn-view-data-source">View data source</div>
     </div>
   </section>
 </template>
@@ -90,17 +90,23 @@ export default {
     }
   },
   methods: {
-    showAllDataSources: function() {
-      this.$emit('onShowAll', !this.showAll);
-      this.prepareData();
+    onDataSourceChange: function() {
+      this.$emit('onDataSourceChange');
     },
-    prepareData: function() {
-      // If otherDataSources array is empty it means that we show user only ds's for current app
+    onDataSourceCreate: function() {
+      this.$emit('onDataSourceCreate');
+    },
+    showAllDataSources: function(event) {
+      this.$emit('onShowAll', event.target.checked);
+      this.formatDataSources();
+    },
+    formatDataSources: function() {
+      // If the otherDataSources array is empty it means that we show the user only data sources for the current app
       if (!this.otherDataSources.length) {
         return this.sortDataSourceEntries(this.currentAppDataSources);
       }
 
-      const groupedDataSources = [
+      const allDataSources = [
         {
           name: 'This app',
           options: []
@@ -111,12 +117,12 @@ export default {
         }
       ];
 
-      groupedDataSources[0].options = this.sortDataSourceEntries(this.currentAppDataSources);
-      groupedDataSources[1].options = this.sortDataSourceEntries(this.filterOtherAppsArray(this.otherDataSources));
+      allDataSources[0].options = this.sortDataSourceEntries(this.currentAppDataSources);
+      allDataSources[1].options = this.sortDataSourceEntries(this.getOtherAppsDataSources(this.otherDataSources));
 
-      return groupedDataSources;
+      return allDataSources;
     },
-    filterOtherAppsArray: function(dataSources) {
+    getOtherAppsDataSources: function(dataSources) {
       return dataSources.filter(dataSource => {
         return this.currentAppDataSources.findIndex(currDS => currDS.id === dataSource.id) === -1;
       });
@@ -154,7 +160,7 @@ export default {
           id: dataSource.id
         });
 
-        this.$emit('selectedDataSource', dataSource);
+        this.$emit('onDataSourceSelect', dataSource);
       }
     },
     sortDataSourceEntries: function(dataSources) {
@@ -213,7 +219,7 @@ export default {
     Select2
   },
   mounted: function() {
-    this.dataSources = this.prepareData();
+    this.dataSources = this.formatDataSources();
   },
   updated: function() {
     Fliplet.Widget.autosize();

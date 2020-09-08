@@ -7,20 +7,23 @@
       {{ errorMessage }}
     </div>
     <div v-else class="main-data-source-provider">
+      <div class="data-source-title">
+        <strong>{{ widgetData.dataSourceTitle || 'Select data source' }}</strong>
+      </div>
       <DataSourceSelector
         :currentAppDataSources="appDataSources" :otherDataSources="allDataSources"
         :selectedDataSource="selectedDataSource"
         :changeDataSource="changeDataSource"
         :showAll="showAll"
-        @selectedDataSource="(dataSource) => { selectedDataSource = dataSource }"
-        @onDataSourceCreate="onDataSourceCreate "
-        @onShowAll="(event) => { showAllDataSources(event) }"
-        @onDataSourceChange="changeDataSource = !changeDataSource"
+        @onDataSourceSelect="onDataSourceSelect"
+        @onDataSourceCreate="onDataSourceCreate"
+        @onShowAll="showAllDataSources"
+        @onDataSourceChange="onDataSourceChange"
       >
       </DataSourceSelector>
       <SecurityNotifier v-show="selectedDataSource"
         :securityEnabled="hasAccessRules()"
-        @updateSecurityRules="updateSecurityDefaults"
+        @addDefaultSecurity="addDefaultSecurity"
       >
       </SecurityNotifier>
     </div>
@@ -49,6 +52,12 @@ export default {
     };
   },
   methods: {
+    onDataSourceChange: function() {
+      this.changeDataSource = !this.changeDataSource;
+    },
+    onDataSourceSelect: function(dataSource) {
+      this.selectedDataSource = dataSource;
+    },
     hasAccessRules: function() {
       if (!this.selectedDataSource) {
         return false;
@@ -60,7 +69,7 @@ export default {
 
       return true;
     },
-    updateSecurityDefaults: function() {
+    addDefaultSecurity: function() {
       this.isLoading = true;
       this.selectedDataSource.accessRules = this.widgetData.accessRules;
 

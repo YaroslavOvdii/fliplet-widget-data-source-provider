@@ -171,6 +171,14 @@ var render = function() {
           "div",
           { staticClass: "main-data-source-provider" },
           [
+            _c("div", { staticClass: "data-source-title" }, [
+              _c("strong", [
+                _vm._v(
+                  _vm._s(_vm.widgetData.dataSourceTitle || "Select data source")
+                )
+              ])
+            ]),
+            _vm._v(" "),
             _c("DataSourceSelector", {
               attrs: {
                 currentAppDataSources: _vm.appDataSources,
@@ -180,16 +188,10 @@ var render = function() {
                 showAll: _vm.showAll
               },
               on: {
-                selectedDataSource: function(dataSource) {
-                  _vm.selectedDataSource = dataSource
-                },
+                onDataSourceSelect: _vm.onDataSourceSelect,
                 onDataSourceCreate: _vm.onDataSourceCreate,
-                onShowAll: function(event) {
-                  _vm.showAllDataSources(event)
-                },
-                onDataSourceChange: function($event) {
-                  _vm.changeDataSource = !_vm.changeDataSource
-                }
+                onShowAll: _vm.showAllDataSources,
+                onDataSourceChange: _vm.onDataSourceChange
               }
             }),
             _vm._v(" "),
@@ -203,7 +205,7 @@ var render = function() {
                 }
               ],
               attrs: { securityEnabled: _vm.hasAccessRules() },
-              on: { updateSecurityRules: _vm.updateSecurityDefaults }
+              on: { addDefaultSecurity: _vm.addDefaultSecurity }
             })
           ],
           1
@@ -266,6 +268,9 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
 
 
 
@@ -285,6 +290,12 @@ __webpack_require__.r(__webpack_exports__);
     };
   },
   methods: {
+    onDataSourceChange: function onDataSourceChange() {
+      this.changeDataSource = !this.changeDataSource;
+    },
+    onDataSourceSelect: function onDataSourceSelect(dataSource) {
+      this.selectedDataSource = dataSource;
+    },
     hasAccessRules: function hasAccessRules() {
       if (!this.selectedDataSource) {
         return false;
@@ -296,7 +307,7 @@ __webpack_require__.r(__webpack_exports__);
 
       return true;
     },
-    updateSecurityDefaults: function updateSecurityDefaults() {
+    addDefaultSecurity: function addDefaultSecurity() {
       var _this = this;
 
       this.isLoading = true;
@@ -564,7 +575,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "render", function() { return render; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return staticRenderFns; });
 var render = function() {
-  var this$1 = this
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
@@ -589,12 +599,8 @@ var render = function() {
             _c(
               "span",
               {
-                staticClass: "btn-link create-dataSource",
-                on: {
-                  click: function() {
-                    this$1.$emit("onDataSourceCreate")
-                  }
-                }
+                staticClass: "btn-link create-data-source",
+                on: { click: _vm.onDataSourceCreate }
               },
               [_vm._v("Create new data source")]
             ),
@@ -625,12 +631,8 @@ var render = function() {
             _c(
               "span",
               {
-                staticClass: "btn-link change-dataSource",
-                on: {
-                  click: function() {
-                    this$1.$emit("onDataSourceChange")
-                  }
-                }
+                staticClass: "btn-link change-data-source",
+                on: { click: _vm.onDataSourceChange }
               },
               [_vm._v("Change")]
             )
@@ -639,7 +641,7 @@ var render = function() {
           _c(
             "div",
             {
-              staticClass: "btn btn-default view-ds-btn",
+              staticClass: "btn btn-default btn-view-data-source",
               on: { click: _vm.viewDataSource }
             },
             [_vm._v("View data source")]
@@ -665,12 +667,8 @@ var render = function() {
             _c(
               "span",
               {
-                staticClass: "btn-link create-dataSource",
-                on: {
-                  click: function() {
-                    this$1.$emit("onDataSourceCreate")
-                  }
-                }
+                staticClass: "btn-link create-data-source",
+                on: { click: _vm.onDataSourceCreate }
               },
               [_vm._v("Create new data source")]
             ),
@@ -688,7 +686,7 @@ var render = function() {
             _c(
               "div",
               {
-                staticClass: "btn btn-default view-ds-btn",
+                staticClass: "btn btn-default btn-view-data-source",
                 on: { click: _vm.viewDataSource }
               },
               [_vm._v("View data source")]
@@ -836,28 +834,34 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   methods: {
-    showAllDataSources: function showAllDataSources() {
-      this.$emit('onShowAll', !this.showAll);
-      this.prepareData();
+    onDataSourceChange: function onDataSourceChange() {
+      this.$emit('onDataSourceChange');
     },
-    prepareData: function prepareData() {
-      // If otherDataSources array is empty it means that we show user only ds's for current app
+    onDataSourceCreate: function onDataSourceCreate() {
+      this.$emit('onDataSourceCreate');
+    },
+    showAllDataSources: function showAllDataSources(event) {
+      this.$emit('onShowAll', event.target.checked);
+      this.formatDataSources();
+    },
+    formatDataSources: function formatDataSources() {
+      // If the otherDataSources array is empty it means that we show the user only data sources for the current app
       if (!this.otherDataSources.length) {
         return this.sortDataSourceEntries(this.currentAppDataSources);
       }
 
-      var groupedDataSources = [{
+      var allDataSources = [{
         name: 'This app',
         options: []
       }, {
         name: 'Other apps',
         options: []
       }];
-      groupedDataSources[0].options = this.sortDataSourceEntries(this.currentAppDataSources);
-      groupedDataSources[1].options = this.sortDataSourceEntries(this.filterOtherAppsArray(this.otherDataSources));
-      return groupedDataSources;
+      allDataSources[0].options = this.sortDataSourceEntries(this.currentAppDataSources);
+      allDataSources[1].options = this.sortDataSourceEntries(this.getOtherAppsDataSources(this.otherDataSources));
+      return allDataSources;
     },
-    filterOtherAppsArray: function filterOtherAppsArray(dataSources) {
+    getOtherAppsDataSources: function getOtherAppsDataSources(dataSources) {
       var _this = this;
 
       return dataSources.filter(function (dataSource) {
@@ -897,7 +901,7 @@ __webpack_require__.r(__webpack_exports__);
           columns: dataSource.columns,
           id: dataSource.id
         });
-        this.$emit('selectedDataSource', dataSource);
+        this.$emit('onDataSourceSelect', dataSource);
       }
     },
     sortDataSourceEntries: function sortDataSourceEntries(dataSources) {
@@ -957,7 +961,7 @@ __webpack_require__.r(__webpack_exports__);
     Select2: _Select2__WEBPACK_IMPORTED_MODULE_1__["default"]
   },
   mounted: function mounted() {
-    this.dataSources = this.prepareData();
+    this.dataSources = this.formatDataSources();
   },
   updated: function updated() {
     Fliplet.Widget.autosize();
@@ -1475,7 +1479,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "render", function() { return render; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return staticRenderFns; });
 var render = function() {
-  var this$1 = this
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
@@ -1491,12 +1494,8 @@ var render = function() {
           _c(
             "div",
             {
-              staticClass: "btn btn-primary security-btn",
-              on: {
-                click: function() {
-                  this$1.$emit("updateSecurityRules")
-                }
-              }
+              staticClass: "btn btn-primary btn-security",
+              on: { click: _vm.onAddDefaultSecurity }
             },
             [_vm._v("Configure security rules")]
           )
@@ -1558,6 +1557,11 @@ __webpack_require__.r(__webpack_exports__);
       type: Boolean,
       "default": false
     }
+  },
+  methods: {
+    onAddDefaultSecurity: function onAddDefaultSecurity() {
+      this.$emit('addDefaultSecurity');
+    }
   }
 });
 
@@ -1586,14 +1590,14 @@ var createDataSource = function createDataSource(widgetData) {
     value: widgetData["default"].name
   }).then(function (dataSourceName) {
     if (dataSourceName === null) {
-      return false;
+      return;
     }
 
     if (!dataSourceName) {
-      Fliplet.Modal.alert({
+      return Fliplet.Modal.alert({
         message: 'Data source name can\'t be empty. Plaese enter data source name again.'
       }).then(function () {
-        createDataSource();
+        createDataSource(widgetData);
       });
     }
 
