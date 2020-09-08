@@ -104,9 +104,9 @@ export default {
       }
 
       // Give VUE time to reset templates
-      setTimeout(() => {
+      this.$nextTick(() => {
         this.isLoading = false;
-      }, 100);
+      });
     },
     loadDataSources: function(appId) {
       this.isLoading = true;

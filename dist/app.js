@@ -342,9 +342,9 @@ __webpack_require__.r(__webpack_exports__);
       } // Give VUE time to reset templates
 
 
-      setTimeout(function () {
+      this.$nextTick(function () {
         _this2.isLoading = false;
-      }, 100);
+      });
     },
     loadDataSources: function loadDataSources(appId) {
       var _this3 = this;
