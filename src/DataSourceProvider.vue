@@ -54,6 +54,8 @@ export default {
   methods: {
     onDataSourceChange: function() {
       this.changeDataSource = !this.changeDataSource;
+
+      this.loadDataSources(this.widgetData.appId);
     },
     onDataSourceSelect: function(dataSource) {
       this.selectedDataSource = dataSource;
@@ -108,39 +110,41 @@ export default {
         this.isLoading = false;
       });
     },
+    loadSelectedDataSource: function() {
+      getDataSource(this.widgetData.dataSourceId)
+        .then(dataSource => {
+          this.selectedDataSource = dataSource;
+
+          Fliplet.Widget.emit('showColumns',
+            {
+              columns: this.selectedDataSource.columns,
+              id: this.selectedDataSource.id
+            }
+          );
+        })
+        .catch(err => {
+          this.errorMessage = Fliplet.parseError(err);
+          this.hasError = true;
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    },
     loadDataSources: function(appId) {
       this.isLoading = true;
 
+      if (this.widgetData.dataSourceId && !this.changeDataSource) {
+        return this.loadSelectedDataSource();
+      }
+
       getDataSources(appId)
         .then(dataSources => {
-          if (this.widgetData.dataSourceId) {
-            this.selectedDataSource = dataSources.find(dataSource => {
-              return dataSource.id === parseInt(this.widgetData.dataSourceId, 10);
-            });
+          const selectedDataSourceInDataSources = dataSources.some(dataSource => {
+            return dataSource.id === this.selectedDataSource.id;
+          });
 
-            if (!this.selectedDataSource) {
-              return getDataSource(this.widgetData.dataSourceId)
-                .then(dataSorce => {
-                  this.selectedDataSource = dataSorce;
-                  dataSources.push(dataSorce);
-                  return dataSources;
-                });
-            }
-          } else {
-            // To insure that user can reselect data source after first selection
-            this.changeDataSource = true;
-          }
-
-          return dataSources;
-        })
-        .then(dataSources => {
-          if (this.selectedDataSource) {
-            Fliplet.Widget.emit('showColumns',
-              {
-                columns: this.selectedDataSource.columns,
-                id: this.selectedDataSource.id
-              }
-            );
+          if (!selectedDataSourceInDataSources) {
+            dataSources.push(this.selectedDataSource);
           }
 
           if (appId) {

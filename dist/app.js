@@ -292,6 +292,7 @@ __webpack_require__.r(__webpack_exports__);
   methods: {
     onDataSourceChange: function onDataSourceChange() {
       this.changeDataSource = !this.changeDataSource;
+      this.loadDataSources(this.widgetData.appId);
     },
     onDataSourceSelect: function onDataSourceSelect(dataSource) {
       this.selectedDataSource = dataSource;
@@ -346,47 +347,50 @@ __webpack_require__.r(__webpack_exports__);
         _this2.isLoading = false;
       });
     },
-    loadDataSources: function loadDataSources(appId) {
+    loadSelectedDataSource: function loadSelectedDataSource() {
       var _this3 = this;
 
+      Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["getDataSource"])(this.widgetData.dataSourceId).then(function (dataSource) {
+        _this3.selectedDataSource = dataSource;
+        Fliplet.Widget.emit('showColumns', {
+          columns: _this3.selectedDataSource.columns,
+          id: _this3.selectedDataSource.id
+        });
+      })["catch"](function (err) {
+        _this3.errorMessage = Fliplet.parseError(err);
+        _this3.hasError = true;
+      })["finally"](function () {
+        _this3.isLoading = false;
+      });
+    },
+    loadDataSources: function loadDataSources(appId) {
+      var _this4 = this;
+
       this.isLoading = true;
+
+      if (this.widgetData.dataSourceId && !this.changeDataSource) {
+        return this.loadSelectedDataSource();
+      }
+
       Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["getDataSources"])(appId).then(function (dataSources) {
-        if (_this3.widgetData.dataSourceId) {
-          _this3.selectedDataSource = dataSources.find(function (dataSource) {
-            return dataSource.id === parseInt(_this3.widgetData.dataSourceId, 10);
-          });
+        var selectedDataSourceInDataSources = dataSources.some(function (dataSource) {
+          return dataSource.id === _this4.selectedDataSource.id;
+        });
 
-          if (!_this3.selectedDataSource) {
-            return Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["getDataSource"])(_this3.widgetData.dataSourceId).then(function (dataSorce) {
-              _this3.selectedDataSource = dataSorce;
-              dataSources.push(dataSorce);
-              return dataSources;
-            });
-          }
-        } else {
-          // To insure that user can reselect data source after first selection
-          _this3.changeDataSource = true;
-        }
-
-        return dataSources;
-      }).then(function (dataSources) {
-        if (_this3.selectedDataSource) {
-          Fliplet.Widget.emit('showColumns', {
-            columns: _this3.selectedDataSource.columns,
-            id: _this3.selectedDataSource.id
-          });
+        if (!selectedDataSourceInDataSources) {
+          dataSources.push(_this4.selectedDataSource);
         }
 
         if (appId) {
-          _this3.appDataSources = dataSources;
+          _this4.appDataSources = dataSources;
         } else {
-          _this3.allDataSources = dataSources;
+          _this4.allDataSources = dataSources;
         }
       })["catch"](function (err) {
-        _this3.hasError = true;
-        _this3.errorMessage = Fliplet.parseError(err);
+        _this4.hasError = true;
+        _this4.errorMessage = Fliplet.parseError(err);
       })["finally"](function () {
-        _this3.isLoading = false;
+        _this4.isLoading = false;
         Fliplet.Widget.autosize();
       });
     },
@@ -395,7 +399,7 @@ __webpack_require__.r(__webpack_exports__);
       this.loadDataSources(this.widgetData.appId);
     },
     onDataSourceCreate: function onDataSourceCreate() {
-      var _this4 = this;
+      var _this5 = this;
 
       this.isLoading = true;
       Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_3__["createDataSource"])(this.widgetData).then(function (dataSource) {
@@ -403,18 +407,18 @@ __webpack_require__.r(__webpack_exports__);
           return;
         }
 
-        _this4.selectedDataSource = dataSource;
+        _this5.selectedDataSource = dataSource;
 
-        if (_this4.allDataSources.length) {
-          _this4.allDataSources[0].options.push(dataSource);
+        if (_this5.allDataSources.length) {
+          _this5.allDataSources[0].options.push(dataSource);
         }
 
-        _this4.appDataSources.push(dataSource);
+        _this5.appDataSources.push(dataSource);
       })["catch"](function (err) {
-        _this4.hasError = true;
-        _this4.errorMessage = Fliplet.parseError(err);
+        _this5.hasError = true;
+        _this5.errorMessage = Fliplet.parseError(err);
       })["finally"](function () {
-        _this4.isLoading = false;
+        _this5.isLoading = false;
       });
     },
     saveRequestListener: function saveRequestListener() {}
@@ -617,9 +621,7 @@ var render = function() {
           ],
           1
         )
-      : _vm.dataSources.length &&
-        _vm.selectedDataSource &&
-        !_vm.changeDataSource
+      : _vm.selectedDataSource && !_vm.changeDataSource
       ? _c("div", [
           _c("p", [
             _vm._v(
@@ -845,7 +847,12 @@ __webpack_require__.r(__webpack_exports__);
       this.formatDataSources();
     },
     formatDataSources: function formatDataSources() {
-      // If the otherDataSources array is empty it means that we show the user only data sources for the current app
+      // If we have selected data source before
+      if (!this.currentAppDataSources.length) {
+        return [];
+      } // If the otherDataSources array is empty it means that we show the user only data sources for the current app
+
+
       if (!this.otherDataSources.length) {
         return this.sortDataSourceEntries(this.currentAppDataSources);
       }
