@@ -697,10 +697,7 @@ __webpack_require__.r(__webpack_exports__);
 
       Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_1__["getDataSource"])(dataSourceId).then(function (dataSource) {
         _this4.selectedDataSource = dataSource;
-        Fliplet.Widget.emit('dataSourceSelect', {
-          columns: _this4.selectedDataSource.columns,
-          id: _this4.selectedDataSource.id
-        });
+        Fliplet.Widget.emit('dataSourceSelect', _this4.selectedDataSource);
 
         _this4.hasAccessRules();
       })["catch"](function (err) {

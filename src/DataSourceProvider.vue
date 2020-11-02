@@ -236,10 +236,7 @@ export default {
         .then(dataSource => {
           this.selectedDataSource = dataSource;
 
-          Fliplet.Widget.emit('dataSourceSelect', {
-            columns: this.selectedDataSource.columns,
-            id: this.selectedDataSource.id
-          });
+          Fliplet.Widget.emit('dataSourceSelect', this.selectedDataSource);
 
           this.hasAccessRules();
         })
