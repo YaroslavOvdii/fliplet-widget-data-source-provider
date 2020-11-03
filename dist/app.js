@@ -613,7 +613,15 @@ __webpack_require__.r(__webpack_exports__);
       var _this = this;
 
       this.isLoading = true;
-      this.selectedDataSource.accessRules = this.widgetData.accessRules;
+
+      if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
+        this.widgetData.accessRules.forEach(function (defaultRule) {
+          _this.selectedDataSource.accessRules.push(defaultRule);
+        });
+      } else {
+        this.selectedDataSource.accessRules = this.widgetData.accessRules;
+      }
+
       Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_1__["updateDataSourceSecurityRules"])(this.selectedDataSource.id, this.selectedDataSource.accessRules).then(function () {
         Fliplet.Modal.alert({
           message: 'Your changes have been applied to all affected apps.'

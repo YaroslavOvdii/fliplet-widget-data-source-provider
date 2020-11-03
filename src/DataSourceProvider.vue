@@ -149,7 +149,14 @@ export default {
     },
     onAddDefaultSecurity() {
       this.isLoading = true;
-      this.selectedDataSource.accessRules = this.widgetData.accessRules;
+
+      if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
+        this.widgetData.accessRules.forEach(defaultRule => {
+          this.selectedDataSource.accessRules.push(defaultRule);
+        });
+      } else {
+        this.selectedDataSource.accessRules = this.widgetData.accessRules;
+      }
 
       updateDataSourceSecurityRules(this.selectedDataSource.id, this.selectedDataSource.accessRules)
         .then(() => {
