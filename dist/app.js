@@ -693,7 +693,8 @@ __webpack_require__.r(__webpack_exports__);
 
         _this3.hasAccessRules();
 
-        _this3.dataSources = _this3.formatDataSources();
+        _this2.dataSources = _this2.formatDataSources();
+        Fliplet.Widget.emit('dataSourceSelect', dataSource);
       })["catch"](function (err) {
         _this3.showError(Fliplet.parseError(err));
       })["finally"](function () {
