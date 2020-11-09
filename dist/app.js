@@ -903,7 +903,18 @@ __webpack_require__.r(__webpack_exports__);
           this.allDataSources = [];
         }
 
-        this.dataSources = this.formatDataSources(); // Give VUE time to reset templates
+        this.dataSources = this.formatDataSources();
+
+        if (this.selectedDataSource) {
+          var inDataSourceList = this.dataSources.some(function (dataSource) {
+            dataSource.id === _this8.selectedDataSource.id;
+          });
+
+          if (!inDataSourceList) {
+            this.selectedDataSource = null;
+          }
+        } // Give VUE time to reset templates
+
 
         this.$nextTick(function () {
           _this8.isLoading = false;

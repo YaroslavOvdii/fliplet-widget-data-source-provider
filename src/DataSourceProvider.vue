@@ -439,6 +439,16 @@ export default {
 
         this.dataSources = this.formatDataSources();
 
+        if (this.selectedDataSource) {
+          const inDataSourceList = this.dataSources.some(dataSource => {
+            dataSource.id === this.selectedDataSource.id;
+          });
+
+          if (!inDataSourceList) {
+            this.selectedDataSource = null;
+          }
+        }
+
         // Give VUE time to reset templates
         this.$nextTick(() => {
           this.isLoading = false;
