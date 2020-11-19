@@ -667,6 +667,7 @@ __webpack_require__.r(__webpack_exports__);
           });
         });
       });
+      includedAccessTypes = _.uniq(includedAccessTypes);
 
       if (this.widgetData.accessRules.length && includedAccessTypes.length !== this.widgetData.accessRules[0].type.length) {
         this.securityEnabled = false;
@@ -1015,14 +1016,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createDataSource", function() { return createDataSource; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "updateDataSourceSecurityRules", function() { return updateDataSourceSecurityRules; });
 var getDataSources = function getDataSources(appId) {
-  var getOptions = appId ? {
-    appId: appId
-  } : {};
+  var getOptions = {
+    attributes: 'id,name,accessRules,columns,type'
+  };
+
+  if (appId) {
+    getOptions.appId = appId;
+  }
+
   return Fliplet.DataSources.get(getOptions);
 };
 var getDataSource = function getDataSource(dataSourceId) {
   return Fliplet.DataSources.getById(dataSourceId, {
-    cache: false
+    cache: false,
+    attributes: 'id,name,accessRules,columns,type'
   });
 };
 var createDataSource = function createDataSource(data, context) {
