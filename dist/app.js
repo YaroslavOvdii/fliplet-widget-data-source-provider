@@ -624,7 +624,9 @@ __webpack_require__.r(__webpack_exports__);
       this.isLoading = true;
 
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
-        this.widgetData.accessRules.forEach(function (defaultRule) {
+        this.widgetData.accessRules.forEach(function (defaultRule, index, array) {
+          array[index].type = _this.missingAccessTypes;
+
           _this.selectedDataSource.accessRules.push(defaultRule);
         });
       } else {
@@ -655,7 +657,11 @@ __webpack_require__.r(__webpack_exports__);
 
       if (this.selectedDataSource.accessRules === null || !this.selectedDataSource.accessRules.length) {
         this.securityEnabled = false;
-        this.missingAccessTypes = this.widgetData.accessRules[0] && this.widgetData.accessRules[0].type;
+        this.missingAccessTypes = this.widgetData.accessRules.map(function (rule) {
+          return rule.type.map(function (accessType) {
+            return accessType;
+          });
+        });
         return;
       }
 
@@ -666,13 +672,18 @@ __webpack_require__.r(__webpack_exports__);
           componentRules.type.forEach(function (componentType) {
             if (dataSourceRules.type.includes(componentType)) {
               includedAccessTypes.push(componentType);
-            } else {
-              _this2.missingAccessTypes.push(componentType);
             }
           });
         });
       });
       includedAccessTypes = _.uniq(includedAccessTypes);
+      this.widgetData.accessRules.forEach(function (defaultRule) {
+        defaultRule.type.forEach(function (defaultType) {
+          if (!includedAccessTypes.includes(defaultType)) {
+            _this2.missingAccessTypes.push(defaultType);
+          }
+        });
+      });
       this.missingAccessTypes = _.uniq(this.missingAccessTypes);
 
       if (this.widgetData.accessRules.length && includedAccessTypes.length !== this.widgetData.accessRules[0].type.length) {

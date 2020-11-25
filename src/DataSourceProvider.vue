@@ -155,7 +155,9 @@ export default {
       this.isLoading = true;
 
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
-        this.widgetData.accessRules.forEach(defaultRule => {
+        this.widgetData.accessRules.forEach((defaultRule, index, array) => {
+          array[index].type = this.missingAccessTypes;
+
           this.selectedDataSource.accessRules.push(defaultRule);
         });
       } else {
@@ -186,7 +188,11 @@ export default {
 
       if (this.selectedDataSource.accessRules === null || !this.selectedDataSource.accessRules.length) {
         this.securityEnabled = false;
-        this.missingAccessTypes = this.widgetData.accessRules[0] && this.widgetData.accessRules[0].type;
+        this.missingAccessTypes = this.widgetData.accessRules.map(rule => {
+          return rule.type.map(accessType => {
+            return accessType;
+          });
+        });
         return;
       }
 
@@ -199,14 +205,21 @@ export default {
           componentRules.type.forEach(componentType => {
             if (dataSourceRules.type.includes(componentType)) {
               includedAccessTypes.push(componentType);
-            } else {
-              this.missingAccessTypes.push(componentType);
             }
           });
         });
       });
 
       includedAccessTypes = _.uniq(includedAccessTypes);
+
+      this.widgetData.accessRules.forEach(defaultRule => {
+        defaultRule.type.forEach(defaultType => {
+          if (!includedAccessTypes.includes(defaultType)) {
+            this.missingAccessTypes.push(defaultType);
+          }
+        });
+      });
+
       this.missingAccessTypes = _.uniq(this.missingAccessTypes);
 
       if (this.widgetData.accessRules.length && includedAccessTypes.length !== this.widgetData.accessRules[0].type.length) {
