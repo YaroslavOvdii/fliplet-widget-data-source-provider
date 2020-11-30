@@ -686,7 +686,7 @@ __webpack_require__.r(__webpack_exports__);
       });
       this.missingAccessTypes = _.uniq(this.missingAccessTypes);
 
-      if (this.widgetData.accessRules.length && includedAccessTypes.length !== this.widgetData.accessRules[0].type.length) {
+      if (this.missingAccessTypes.length) {
         this.securityEnabled = false;
         return;
       }
@@ -935,7 +935,7 @@ __webpack_require__.r(__webpack_exports__);
 
             _this8.hasAccessRules();
 
-            if (!_this8.securityEnabled) {
+            if (!_this8.securityEnabled && _this8.selectedDataSource) {
               _this8.confirmAccessRules();
             }
 

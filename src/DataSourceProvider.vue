@@ -222,7 +222,7 @@ export default {
 
       this.missingAccessTypes = _.uniq(this.missingAccessTypes);
 
-      if (this.widgetData.accessRules.length && includedAccessTypes.length !== this.widgetData.accessRules[0].type.length) {
+      if (this.missingAccessTypes.length) {
         this.securityEnabled = false;
 
         return;
@@ -469,7 +469,7 @@ export default {
 
             this.hasAccessRules();
 
-            if (!this.securityEnabled) {
+            if (!this.securityEnabled && this.selectedDataSource) {
               this.confirmAccessRules();
             }
 
