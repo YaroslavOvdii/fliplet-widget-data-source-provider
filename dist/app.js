@@ -1117,8 +1117,11 @@ var createDataSource = function createDataSource(data, context) {
   });
 };
 var updateDataSourceSecurityRules = function updateDataSourceSecurityRules(dataSourceId, securityRules) {
+  var accessRules = Object.assign(securityRules, {
+    enabled: true
+  });
   return Fliplet.DataSources.update(dataSourceId, {
-    accessRules: securityRules
+    accessRules: accessRules
   });
 };
 
