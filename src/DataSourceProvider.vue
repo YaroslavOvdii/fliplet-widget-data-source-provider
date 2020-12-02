@@ -158,7 +158,9 @@ export default {
         this.widgetData.accessRules.forEach((defaultRule, index, array) => {
           array[index].type = this.missingAccessTypes;
 
-          this.selectedDataSource.accessRules.push(defaultRule);
+          if (index === 0 || defaultRule.allow !== array[index - 1].allow) {
+            this.selectedDataSource.accessRules.push(defaultRule);
+          }
         });
       } else {
         this.selectedDataSource.accessRules = this.widgetData.accessRules;

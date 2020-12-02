@@ -627,7 +627,9 @@ __webpack_require__.r(__webpack_exports__);
         this.widgetData.accessRules.forEach(function (defaultRule, index, array) {
           array[index].type = _this.missingAccessTypes;
 
-          _this.selectedDataSource.accessRules.push(defaultRule);
+          if (index === 0 || defaultRule.allow !== array[index - 1].allow) {
+            _this.selectedDataSource.accessRules.push(defaultRule);
+          }
         });
       } else {
         this.selectedDataSource.accessRules = this.widgetData.accessRules;
@@ -973,7 +975,7 @@ __webpack_require__.r(__webpack_exports__);
           var targetSources = this.allDataSources.length ? this.allDataSources : this.dataSources;
 
           if (!targetSources.some(function (currDS) {
-            return currDS.id === _this8.selectedDataSource.id;
+            return currDS.id === _this9.selectedDataSource.id;
           })) {
             this.selectedDataSource = null;
           }
@@ -1127,8 +1129,10 @@ var createDataSource = function createDataSource(data, context) {
   });
 };
 var updateDataSourceSecurityRules = function updateDataSourceSecurityRules(dataSourceId, securityRules) {
-  var accessRules = Object.assign(securityRules, {
-    enabled: true
+  var accessRules = securityRules.map(function (securityRule) {
+    return Object.assign(securityRule, {
+      enabled: true
+    });
   });
   return Fliplet.DataSources.update(dataSourceId, {
     accessRules: accessRules
