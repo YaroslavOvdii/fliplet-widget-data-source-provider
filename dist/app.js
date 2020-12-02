@@ -553,6 +553,7 @@ __webpack_require__.r(__webpack_exports__);
       appDataSources: [],
       allDataSources: [],
       copyOfAllDataSources: [],
+      missingAccessTypes: [],
       isLoading: true,
       widgetData: {},
       selectedDataSource: null,
@@ -623,7 +624,9 @@ __webpack_require__.r(__webpack_exports__);
       this.isLoading = true;
 
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
-        this.widgetData.accessRules.forEach(function (defaultRule) {
+        this.widgetData.accessRules.forEach(function (defaultRule, index, array) {
+          array[index].type = _this.missingAccessTypes;
+
           _this.selectedDataSource.accessRules.push(defaultRule);
         });
       } else {
@@ -654,10 +657,16 @@ __webpack_require__.r(__webpack_exports__);
 
       if (this.selectedDataSource.accessRules === null || !this.selectedDataSource.accessRules.length) {
         this.securityEnabled = false;
+        this.missingAccessTypes = this.widgetData.accessRules.map(function (rule) {
+          return rule.type.map(function (accessType) {
+            return accessType;
+          });
+        });
         return;
       }
 
       var includedAccessTypes = [];
+      this.missingAccessTypes = [];
       this.selectedDataSource.accessRules.forEach(function (dataSourceRules) {
         _this2.widgetData.accessRules.forEach(function (componentRules) {
           componentRules.type.forEach(function (componentType) {
@@ -668,8 +677,16 @@ __webpack_require__.r(__webpack_exports__);
         });
       });
       includedAccessTypes = _.uniq(includedAccessTypes);
+      this.widgetData.accessRules.forEach(function (defaultRule) {
+        defaultRule.type.forEach(function (defaultType) {
+          if (!includedAccessTypes.includes(defaultType)) {
+            _this2.missingAccessTypes.push(defaultType);
+          }
+        });
+      });
+      this.missingAccessTypes = _.uniq(this.missingAccessTypes);
 
-      if (this.widgetData.accessRules.length && includedAccessTypes.length !== this.widgetData.accessRules[0].type.length) {
+      if (this.missingAccessTypes.length) {
         this.securityEnabled = false;
         return;
       }
@@ -748,9 +765,9 @@ __webpack_require__.r(__webpack_exports__);
         }
 
         if (appId) {
-          _this5.appDataSources = dataSources.filter(_this5.filterNotUsersDataSources);
+          _this5.appDataSources = dataSources;
         } else {
-          _this5.allDataSources = dataSources.filter(_this5.filterNotUsersDataSources);
+          _this5.allDataSources = dataSources;
         }
 
         _this5.dataSources = _this5.formatDataSources();
@@ -762,9 +779,6 @@ __webpack_require__.r(__webpack_exports__);
         _this5.isLoading = false;
         Fliplet.Widget.autosize();
       });
-    },
-    filterNotUsersDataSources: function filterNotUsersDataSources(dataSource) {
-      return !dataSource.type;
     },
     formatDataSources: function formatDataSources() {
       // If the otherDataSources array is empty it means that we show the user only data sources for the current app
@@ -871,21 +885,62 @@ __webpack_require__.r(__webpack_exports__);
           helpLink: 'https://help.fliplet.com/data-sources/'
         }
       });
+    },
+    confirmAccessRules: function confirmAccessRules() {
+      var _this7 = this;
+
+      var message = "To use this feature, <code>".concat(this.missingAccessTypes.join(', ').toUpperCase(), "</code> access must be added to the data source");
+      Fliplet.Modal.confirm({
+        message: message,
+        buttons: {
+          confirm: {
+            label: 'Add security rule'
+          },
+          cancel: {
+            label: 'I\'ll do it later'
+          }
+        }
+      }).then(function (result) {
+        if (result) {
+          _this7.onAddDefaultSecurity();
+        }
+      });
     }
   },
   mounted: function mounted() {
-    var _this7 = this;
+    var _this8 = this;
 
     this.initProvider(); // Transfer selected DataSource id to the parent
 
     Fliplet.Widget.onSaveRequest(function () {
       Fliplet.Widget.save({
-        id: _this7.selectedDataSource ? _this7.selectedDataSource.id : null
+        id: _this8.selectedDataSource ? _this8.selectedDataSource.id : null
       });
     });
     Fliplet.Studio.onMessage(function (event) {
-      if (event.data && event.data.event === 'overlay-close' && event.data.classes === 'data-source-overlay') {
-        _this7.loadSelectedDataSource(_this7.selectedDataSource.id);
+      if (event.data) {
+        switch (event.data.event) {
+          case 'overlay-close':
+            if (event.data.classes === 'data-source-overlay') {
+              _this8.loadSelectedDataSource(_this8.selectedDataSource.id);
+            }
+
+            break;
+
+          case 'update-security-rules':
+            _this8.widgetData.accessRules = event.data.accessRules;
+
+            _this8.hasAccessRules();
+
+            if (!_this8.securityEnabled && _this8.selectedDataSource) {
+              _this8.confirmAccessRules();
+            }
+
+            break;
+
+          default:
+            break;
+        }
       }
     });
   },
@@ -895,7 +950,7 @@ __webpack_require__.r(__webpack_exports__);
   watch: {
     showAll: {
       handler: function handler(value) {
-        var _this8 = this;
+        var _this9 = this;
 
         this.isLoading = true;
         this.dataSources = [];
@@ -912,10 +967,21 @@ __webpack_require__.r(__webpack_exports__);
           this.allDataSources = [];
         }
 
-        this.dataSources = this.formatDataSources(); // Give VUE time to reset templates
+        this.dataSources = this.formatDataSources();
+
+        if (this.selectedDataSource) {
+          var targetSources = this.allDataSources.length ? this.allDataSources : this.dataSources;
+
+          if (!targetSources.some(function (currDS) {
+            return currDS.id === _this8.selectedDataSource.id;
+          })) {
+            this.selectedDataSource = null;
+          }
+        } // Give VUE time to reset templates
+
 
         this.$nextTick(function () {
-          _this8.isLoading = false;
+          _this9.isLoading = false;
         });
       }
     }
@@ -1017,11 +1083,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "updateDataSourceSecurityRules", function() { return updateDataSourceSecurityRules; });
 var getDataSources = function getDataSources(appId) {
   var getOptions = {
-    attributes: 'id,name,accessRules,columns,type,definition'
+    attributes: 'id,name,accessRules,columns,appId,definition',
+    type: null
   };
 
   if (appId) {
     getOptions.appId = appId;
+    getOptions.includeInUse = true;
   }
 
   return Fliplet.DataSources.get(getOptions);
@@ -1029,7 +1097,7 @@ var getDataSources = function getDataSources(appId) {
 var getDataSource = function getDataSource(dataSourceId) {
   return Fliplet.DataSources.getById(dataSourceId, {
     cache: false,
-    attributes: 'id,name,accessRules,columns,type,definition'
+    attributes: 'id,name,accessRules,columns,definition'
   });
 };
 var createDataSource = function createDataSource(data, context) {
@@ -1059,8 +1127,11 @@ var createDataSource = function createDataSource(data, context) {
   });
 };
 var updateDataSourceSecurityRules = function updateDataSourceSecurityRules(dataSourceId, securityRules) {
+  var accessRules = Object.assign(securityRules, {
+    enabled: true
+  });
   return Fliplet.DataSources.update(dataSourceId, {
-    accessRules: securityRules
+    accessRules: accessRules
   });
 };
 

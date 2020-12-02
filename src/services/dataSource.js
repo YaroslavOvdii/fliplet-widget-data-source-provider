@@ -1,15 +1,16 @@
 export const getDataSources = appId => {
-  const getOptions = { attributes: 'id,name,accessRules,columns,type,definition' };
+  const getOptions = { attributes: 'id,name,accessRules,columns,appId,definition', type: null };
 
   if (appId) {
     getOptions.appId = appId;
+    getOptions.includeInUse = true;
   }
 
   return Fliplet.DataSources.get(getOptions);
 };
 
 export const getDataSource = dataSourceId => {
-  return Fliplet.DataSources.getById(dataSourceId, { cache: false, attributes: 'id,name,accessRules,columns,type,definition' });
+  return Fliplet.DataSources.getById(dataSourceId, { cache: false, attributes: 'id,name,accessRules,columns,definition' });
 };
 
 export const createDataSource = (data, context) => {
@@ -43,7 +44,7 @@ export const createDataSource = (data, context) => {
 };
 
 export const updateDataSourceSecurityRules = (dataSourceId, securityRules) => {
-  return Fliplet.DataSources.update(dataSourceId, {
-    accessRules: securityRules
-  });
+  const accessRules = Object.assign(securityRules, { enabled: true });
+
+  return Fliplet.DataSources.update(dataSourceId, { accessRules });
 };
