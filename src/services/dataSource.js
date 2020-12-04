@@ -44,9 +44,5 @@ export const createDataSource = (data, context) => {
 };
 
 export const updateDataSourceSecurityRules = (dataSourceId, securityRules) => {
-  const accessRules = securityRules.map(securityRule => {
-    return Object.assign(securityRule, { enabled: true });
-  });
-
-  return Fliplet.DataSources.update(dataSourceId, { accessRules });
+  return Fliplet.DataSources.update(dataSourceId, { accessRules: securityRules });
 };

@@ -157,6 +157,7 @@ export default {
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
         this.widgetData.accessRules.forEach((defaultRule, index, array) => {
           array[index].type = this.missingAccessTypes;
+          Object.assign(array[index], { enabled: true });
 
           if (index === 0 || defaultRule.allow !== array[index - 1].allow) {
             this.selectedDataSource.accessRules.push(defaultRule);

@@ -626,6 +626,9 @@ __webpack_require__.r(__webpack_exports__);
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
         this.widgetData.accessRules.forEach(function (defaultRule, index, array) {
           array[index].type = _this.missingAccessTypes;
+          Object.assign(array[index], {
+            enabled: true
+          });
 
           if (index === 0 || defaultRule.allow !== array[index - 1].allow) {
             _this.selectedDataSource.accessRules.push(defaultRule);
@@ -1129,13 +1132,8 @@ var createDataSource = function createDataSource(data, context) {
   });
 };
 var updateDataSourceSecurityRules = function updateDataSourceSecurityRules(dataSourceId, securityRules) {
-  var accessRules = securityRules.map(function (securityRule) {
-    return Object.assign(securityRule, {
-      enabled: true
-    });
-  });
   return Fliplet.DataSources.update(dataSourceId, {
-    accessRules: accessRules
+    accessRules: securityRules
   });
 };
 
