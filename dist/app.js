@@ -624,18 +624,29 @@ __webpack_require__.r(__webpack_exports__);
       this.isLoading = true;
 
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
-        this.widgetData.accessRules.forEach(function (defaultRule, index, array) {
-          array[index].type = _this.missingAccessTypes;
-          Object.assign(array[index], {
-            enabled: true
-          });
+        this.widgetData.accessRules.forEach(function (defaultRule) {
+          defaultRule.type = _this.missingAccessTypes;
+          defaultRule.enabled = true;
 
-          if (index === 0 || defaultRule.allow !== array[index - 1].allow) {
+          var isRuleDuplicate = _this.selectedDataSource.accessRules.some(function (rule) {
+            // Rule considered as duplicated in case if we have the same rule types and same allow option.
+            if (defaultRule.allow === rule.allow && !_.difference(rule.type, defaultRule.type).length) {
+              return true;
+            }
+
+            return false;
+          }); // Add new rule only if it is not duplicate
+
+
+          if (!isRuleDuplicate) {
             _this.selectedDataSource.accessRules.push(defaultRule);
           }
         });
       } else {
-        this.selectedDataSource.accessRules = this.widgetData.accessRules;
+        this.selectedDataSource.accessRules = this.widgetData.accessRules.map(function (defaultRule) {
+          defaultRule.enabled = true;
+          return defaultRule;
+        });
       }
 
       Object(_services_dataSource__WEBPACK_IMPORTED_MODULE_1__["updateDataSourceSecurityRules"])(this.selectedDataSource.id, this.selectedDataSource.accessRules).then(function () {
