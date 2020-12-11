@@ -628,17 +628,13 @@ __webpack_require__.r(__webpack_exports__);
           defaultRule.type = _this.missingAccessTypes;
           defaultRule.enabled = true;
 
-          var isRuleDuplicate = _this.selectedDataSource.accessRules.some(function (rule) {
+          var accessRuleFound = _this.selectedDataSource.accessRules.some(function (rule) {
             // Rule considered as duplicated in case if we have the same rule types and same allow option.
-            if (defaultRule.allow === rule.allow && !_.difference(rule.type, defaultRule.type).length) {
-              return true;
-            }
-
-            return false;
-          }); // Add new rule only if it is not duplicate
+            return defaultRule.allow === rule.allow && !_.difference(rule.type, defaultRule.type).length;
+          }); // Add new rule only if it is not found
 
 
-          if (!isRuleDuplicate) {
+          if (!accessRuleFound) {
             _this.selectedDataSource.accessRules.push(defaultRule);
           }
         });

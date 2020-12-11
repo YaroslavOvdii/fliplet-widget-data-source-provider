@@ -160,17 +160,13 @@ export default {
           defaultRule.enabled = true;
 
 
-          let isRuleDuplicate = this.selectedDataSource.accessRules.some(rule => {
+          let accessRuleFound = this.selectedDataSource.accessRules.some(rule => {
             // Rule considered as duplicated in case if we have the same rule types and same allow option.
-            if (defaultRule.allow === rule.allow && !_.difference(rule.type, defaultRule.type).length) {
-              return true;
-            }
-
-            return false;
+            return defaultRule.allow === rule.allow && !_.difference(rule.type, defaultRule.type).length;
           });
 
-          // Add new rule only if it is not duplicate
-          if (!isRuleDuplicate) {
+          // Add new rule only if it is not found
+          if (!accessRuleFound) {
             this.selectedDataSource.accessRules.push(defaultRule);
           }
         });
