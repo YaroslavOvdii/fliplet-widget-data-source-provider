@@ -191,9 +191,9 @@ export default {
             // And it's related to all apps or to the current app
             return (
               defaultRule.allow === rule.allow
-              && !_.difference(rule.type, defaultRule.type).length
-              && rule.enabled
-              && (!rule.appId || rule.appId.includes(this.widgetData.appId))
+                && !_.difference(rule.type, defaultRule.type).length
+                && rule.enabled
+                && (!rule.appId || rule.appId.includes(this.widgetData.appId))
             );
           });
 
