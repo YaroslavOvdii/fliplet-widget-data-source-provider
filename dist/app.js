@@ -944,7 +944,7 @@ __webpack_require__.r(__webpack_exports__);
             label: 'Add security rule'
           },
           cancel: {
-            label: "I'll do it later"
+            label: 'I\'ll do it later'
           }
         }
       }).then(function (result) {

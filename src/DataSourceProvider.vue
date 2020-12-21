@@ -190,10 +190,10 @@ export default {
             // And it's enabled
             // And it's related to all apps or to the current app
             return (
-              defaultRule.allow === rule.allow &&
-              !_.difference(rule.type, defaultRule.type).length &&
-              rule.enabled &&
-              (!rule.appId || rule.appId.includes(this.widgetData.appId))
+              defaultRule.allow === rule.allow
+              && !_.difference(rule.type, defaultRule.type).length
+              && rule.enabled
+              && (!rule.appId || rule.appId.includes(this.widgetData.appId))
             );
           });
 
@@ -255,9 +255,9 @@ export default {
         this.widgetData.accessRules.forEach(componentRules => {
           componentRules.type.forEach(componentType => {
             if (
-              dataSourceRules.type.includes(componentType) &&
-              dataSourceRules.enabled &&
-              (!dataSourceRules.appId || dataSourceRules.appId.includes(this.widgetData.appId))
+              dataSourceRules.type.includes(componentType)
+              && dataSourceRules.enabled
+              && (!dataSourceRules.appId || dataSourceRules.appId.includes(this.widgetData.appId))
             ) {
               includedAccessTypes.push(componentType);
             }
@@ -490,7 +490,7 @@ export default {
             label: 'Add security rule'
           },
           cancel: {
-            label: "I'll do it later"
+            label: 'I\'ll do it later'
           }
         }
       }).then(result => {
