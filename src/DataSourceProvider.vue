@@ -176,6 +176,7 @@ export default {
     },
     onAddDefaultSecurity() {
       this.isLoading = true;
+
       const defaultRules = _.cloneDeep(this.widgetData.accessRules);
 
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
@@ -230,6 +231,7 @@ export default {
     hasAccessRules() {
       if (!this.selectedDataSource) {
         this.securityEnabled = false;
+
         return;
       }
 
@@ -244,6 +246,7 @@ export default {
             return accessType;
           });
         });
+
         return;
       }
 
@@ -455,6 +458,7 @@ export default {
       if (aValue < bValue) {
         return -1;
       }
+
       if (aValue > bValue) {
         return 1;
       }
@@ -545,6 +549,7 @@ export default {
         if (value) {
           if (!this.copyOfAllDataSources.length) {
             this.loadDataSources();
+
             return;
           }
 
