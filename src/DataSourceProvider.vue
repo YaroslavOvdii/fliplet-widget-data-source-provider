@@ -98,7 +98,7 @@ export default {
       showAll: false,
       securityAdded: false,
       defaultAccessRules: [
-        { type: ['select', 'insert', 'update', 'delete'], allow: 'all' }
+        { type: ['select', 'insert', 'update', 'delete'], allow: 'all', enabled: true }
       ]
     };
   },
@@ -157,21 +157,24 @@ export default {
           return;
         }
 
+        let enabledAccessTypes = [];
+
         // If this rule has any missing access rule
-        this.missingAccessTypes.forEach((missingRule, index) => {
+        this.missingAccessTypes.forEach((missingRule) => {
           if (dataSourceRule.type.includes(missingRule)) {
             // If this rule for all or for current app
             if (
               (!dataSourceRule.appId || dataSourceRule.appId.includes(this.widgetData.appId))
             ) {
-              // Remove missing access types because we enabled rule where we have it
-              this.missingAccessTypes.splice(index, 1);
+              enabledAccessTypes.push(missingRule);
 
               // Enable access rule
               dataSourceRule.enabled = true;
             }
           }
         });
+
+        this.missingAccessTypes = _.difference(this.missingAccessTypes, enabledAccessTypes);
       });
     },
     onAddDefaultSecurity() {
@@ -201,7 +204,14 @@ export default {
           // Add new rule only if it is not found
           // Or we if we have a missing rules to add
           if (!accessRuleFound && this.missingAccessTypes.length) {
-            this.selectedDataSource.accessRules.push(defaultRule);
+            // Split rules for each rule type
+            // To add them as separate rules
+            defaultRule.type.forEach((type) => {
+              this.selectedDataSource.accessRules.push({
+                ...defaultRule,
+                type
+              });
+            });
           }
         });
       } else {
