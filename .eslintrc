@@ -3,7 +3,8 @@
   "extends": [
     "eslint:recommended",
     "fliplet",
-    "plugin:vue/essential"
+    "plugin:vue/essential",
+    "Modernizr"
   ],
   "globals": {
     "Vue": true
