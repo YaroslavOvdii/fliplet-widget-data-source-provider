@@ -41,7 +41,7 @@
           <a @click.prevent="onDataSourceCreate" class="create-data-source" href="#">Create new data source</a>
 
           <div class="checkbox checkbox-icon">
-            <input :checked="showAll" v-model="showAll" type="checkbox" name="showAll" id="showAll" />
+            <input v-model="showAll" type="checkbox" name="showAll" id="showAll" />
             <label for="showAll">
               <span class="check">
                 <i class="fa fa-check"></i>
@@ -151,6 +151,31 @@ export default {
 
       this.loadDataSources(this.widgetData.appId);
     },
+    addAppToExistingRule() {
+      this.selectedDataSource.accessRules.forEach(dataSourceRule => {
+        if (!dataSourceRule.appId || !dataSourceRule.appId.length || dataSourceRule.appId.includes(this.widgetData.appId)) {
+          return;
+        }
+
+        if (!_.difference(this.missingAccessTypes, dataSourceRule.type).length) {
+          return dataSourceRule.appId.push(this.widgetData.appId);
+        }
+
+        let existingAccessTypes = [];
+
+        this.missingAccessTypes.forEach(missingRule => {
+          if (dataSourceRule.type.includes(missingRule)) {
+            existingAccessTypes.push(missingRule);
+          }
+        });
+
+        if (existingAccessTypes.length === dataSourceRule.type.length) {
+          dataSourceRule.appId.push(this.widgetData.appId);
+        }
+
+        this.missingAccessTypes = _.difference(this.missingAccessTypes, existingAccessTypes);
+      });
+    },
     enableRequiredRules() {
       this.selectedDataSource.accessRules.forEach(dataSourceRule => {
         if (dataSourceRule.enabled) {
@@ -183,6 +208,7 @@ export default {
       const defaultRules = _.cloneDeep(this.widgetData.accessRules);
 
       if (this.selectedDataSource.accessRules && this.selectedDataSource.accessRules.length > 0) {
+        this.addAppToExistingRule();
         this.enableRequiredRules();
 
         defaultRules.forEach(defaultRule => {
@@ -209,7 +235,7 @@ export default {
             defaultRule.type.forEach((type) => {
               this.selectedDataSource.accessRules.push({
                 ...defaultRule,
-                type
+                type: Array.isArray(type) ? type : [type]
               });
             });
           }
@@ -312,7 +338,15 @@ export default {
             return;
           }
 
-          this.selectedDataSource = dataSource;
+          if (Modernizr.ie11) {
+            // Specific fix for Vue 2.0.0(and above) render bug in IE11 
+            // https://github.com/vuejs/vue/issues/6209
+            setTimeout(() => {
+              this.selectedDataSource = dataSource;
+            }, 0)
+          } else {
+            this.selectedDataSource = dataSource;
+          }
 
           if (this.allDataSources.length) {
             this.allDataSources.push(dataSource);
@@ -485,7 +519,8 @@ export default {
           classes: 'data-source-overlay',
           data: {
             context: 'overlay',
-            dataSourceId: this.selectedDataSource.id
+            dataSourceId: this.selectedDataSource.id,
+            appId: Fliplet.Env.get('appId')
           },
           helpLink: 'https://help.fliplet.com/data-sources/'
         }
