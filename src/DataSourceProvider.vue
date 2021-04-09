@@ -444,21 +444,7 @@ export default {
       return allDataSources.filter(group => !!group.options.length);
     },
     getOtherAppsDataSources(dataSources) {
-      return dataSources.filter(dataSource => {
-        let index = -1;
-
-        this.appDataSources.some((currDS, i) => {
-          if (currDS.id === dataSource.id) {
-            index = i;
-
-            return true;
-          }
-
-          return false;
-        });
-
-        return index === -1;
-      });
+      return _.difference(dataSources, this.appDataSources, 'id');
     },
     formatDataSourceOption(data) {
       const { id, name, text } = data;
