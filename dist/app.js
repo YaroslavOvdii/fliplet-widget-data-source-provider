@@ -797,7 +797,15 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
           return;
         }
 
-        _this5.selectedDataSource = dataSource;
+        if (Modernizr.ie11) {
+          // Specific fix for Vue 2.0.0(and above) render bug in IE11
+          // https://github.com/vuejs/vue/issues/6209
+          setTimeout(function () {
+            _this5.selectedDataSource = dataSource;
+          }, 0);
+        } else {
+          _this5.selectedDataSource = dataSource;
+        }
 
         if (_this5.allDataSources.length) {
           _this5.allDataSources.push(dataSource);
@@ -893,9 +901,18 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
       var _this8 = this;
 
       return dataSources.filter(function (dataSource) {
-        return _this8.appDataSources.findIndex(function (currDS) {
-          return currDS.id === dataSource.id;
-        }) === -1;
+        var index = -1;
+
+        _this8.appDataSources.some(function (currDS, i) {
+          if (currDS.id === dataSource.id) {
+            index = i;
+            return true;
+          }
+
+          return false;
+        });
+
+        return index === -1;
       });
     },
     formatDataSourceOption: function formatDataSourceOption(data) {
@@ -969,7 +986,8 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
           classes: 'data-source-overlay',
           data: {
             context: 'overlay',
-            dataSourceId: this.selectedDataSource.id
+            dataSourceId: this.selectedDataSource.id,
+            appId: Fliplet.Env.get('appId')
           },
           helpLink: 'https://help.fliplet.com/data-sources/'
         }
