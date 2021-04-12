@@ -116,7 +116,7 @@ export default {
         value = null;
       } else if (this.allDataSources.length) {
         this.dataSources.some(group => {
-          let selectedOption = group.options.find(option => option.id === id);
+          let selectedOption = _.find(group.options, ['id', id]);
 
           if (selectedOption) {
             value = selectedOption;
@@ -127,7 +127,7 @@ export default {
           return false;
         });
       } else {
-        value = this.dataSources.find(option => option.id === id);
+        value = _.find(this.dataSources, ['id', id]);
       }
 
       this.selectedDataSource = value;
@@ -339,11 +339,11 @@ export default {
           }
 
           if (Modernizr.ie11) {
-            // Specific fix for Vue 2.0.0(and above) render bug in IE11 
+            // Specific fix for Vue 2.0.0(and above) render bug in IE11
             // https://github.com/vuejs/vue/issues/6209
             setTimeout(() => {
               this.selectedDataSource = dataSource;
-            }, 0)
+            }, 0);
           } else {
             this.selectedDataSource = dataSource;
           }
