@@ -116,7 +116,7 @@ export default {
         value = null;
       } else if (this.allDataSources.length) {
         this.dataSources.some(group => {
-          let selectedOption = group.options.find(option => option.id === id);
+          let selectedOption = _.find(group.options, ['id', id]);
 
           if (selectedOption) {
             value = selectedOption;
@@ -127,7 +127,7 @@ export default {
           return false;
         });
       } else {
-        value = this.dataSources.find(option => option.id === id);
+        value = _.find(this.dataSources, ['id', id]);
       }
 
       this.selectedDataSource = value;

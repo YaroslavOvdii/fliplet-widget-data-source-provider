@@ -587,9 +587,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
         value = null;
       } else if (this.allDataSources.length) {
         this.dataSources.some(function (group) {
-          var selectedOption = group.options.find(function (option) {
-            return option.id === id;
-          });
+          var selectedOption = _.find(group.options, ['id', id]);
 
           if (selectedOption) {
             value = selectedOption;
@@ -599,9 +597,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
           return false;
         });
       } else {
-        value = this.dataSources.find(function (option) {
-          return option.id === id;
-        });
+        value = _.find(this.dataSources, ['id', id]);
       }
 
       this.selectedDataSource = value;
@@ -898,22 +894,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
       });
     },
     getOtherAppsDataSources: function getOtherAppsDataSources(dataSources) {
-      var _this8 = this;
-
-      return dataSources.filter(function (dataSource) {
-        var index = -1;
-
-        _this8.appDataSources.some(function (currDS, i) {
-          if (currDS.id === dataSource.id) {
-            index = i;
-            return true;
-          }
-
-          return false;
-        });
-
-        return index === -1;
-      });
+      return _.difference(dataSources, this.appDataSources, 'id');
     },
     formatDataSourceOption: function formatDataSourceOption(data) {
       var id = data.id,
@@ -994,7 +975,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
       });
     },
     confirmAccessRules: function confirmAccessRules() {
-      var _this9 = this;
+      var _this8 = this;
 
       var message = "To use this feature, <code>".concat(this.missingAccessTypes.join(', ').toUpperCase(), "</code> access must be added to the data source");
       Fliplet.Modal.confirm({
@@ -1010,19 +991,19 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
         }
       }).then(function (result) {
         if (result) {
-          _this9.onAddDefaultSecurity();
+          _this8.onAddDefaultSecurity();
         }
       });
     }
   },
   mounted: function mounted() {
-    var _this10 = this;
+    var _this9 = this;
 
     this.initProvider(); // Transfer selected DataSource id to the parent
 
     Fliplet.Widget.onSaveRequest(function () {
       Fliplet.Widget.save({
-        id: _this10.selectedDataSource ? _this10.selectedDataSource.id : null
+        id: _this9.selectedDataSource ? _this9.selectedDataSource.id : null
       });
     });
     Fliplet.Studio.onMessage(function (event) {
@@ -1030,18 +1011,18 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
         switch (event.data.event) {
           case 'overlay-close':
             if (event.data.classes === 'data-source-overlay') {
-              _this10.loadSelectedDataSource(_this10.selectedDataSource.id);
+              _this9.loadSelectedDataSource(_this9.selectedDataSource.id);
             }
 
             break;
 
           case 'update-security-rules':
-            _this10.widgetData.accessRules = event.data.accessRules;
+            _this9.widgetData.accessRules = event.data.accessRules;
 
-            _this10.hasAccessRules();
+            _this9.hasAccessRules();
 
-            if (!_this10.securityEnabled && _this10.selectedDataSource) {
-              _this10.confirmAccessRules();
+            if (!_this9.securityEnabled && _this9.selectedDataSource) {
+              _this9.confirmAccessRules();
             }
 
             break;
@@ -1058,7 +1039,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
   watch: {
     showAll: {
       handler: function handler(value) {
-        var _this11 = this;
+        var _this10 = this;
 
         this.isLoading = true;
         this.dataSources = [];
@@ -1081,7 +1062,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
           var targetSources = this.allDataSources.length ? this.allDataSources : this.dataSources;
 
           if (!targetSources.some(function (currDS) {
-            return currDS.id === _this11.selectedDataSource.id;
+            return currDS.id === _this10.selectedDataSource.id;
           })) {
             this.selectedDataSource = null;
           }
@@ -1089,7 +1070,7 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 
         this.$nextTick(function () {
-          _this11.isLoading = false;
+          _this10.isLoading = false;
         });
       }
     }
